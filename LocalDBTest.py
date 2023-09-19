@@ -1,14 +1,28 @@
 import pyodbc
 
 # Define the database connection parameters
-server = 'LAPTOP-JFG8PKR1'
-database = 'TestDB'
+server = None
+database = None
+
+# Specify the path to the abc.txt file
+file_path = 'pers.txt'
+
+# Open and read the file
+try:
+    with open(file_path, 'r') as file:
+        server = file.readline().strip()
+        database = file.readline().strip()
+except FileNotFoundError:
+    print(f"The file '{file_path}' was not found.")
+except Exception as e:
+    print(f"An error occurred: {str(e)}")
+
 
 # Define the SQL INSERT query
 insert_query = "INSERT INTO Employees (Name, Surname, Salary) VALUES (?, ?, ?)"
 
 # Create a list of parameter values for the INSERT query
-parameter_values = ["Sam", "Jackson", "600"]
+parameter_values = ["Mike", "Michealson", "7250,50"]
 
 try:
     # Establish a connection to the database
