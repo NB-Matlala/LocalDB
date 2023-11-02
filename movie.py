@@ -5,7 +5,7 @@ import random
 import time
 
 session = HTMLSession()
-filename = 'Movie_Data3.csv'
+filename = 'Movie_Data.csv'
 web_base = "https://web.soap-2day.to"
 
 fieldnames = ['Title', 'Category', 'Release Date', 'Genre', 'Country', 'Casts', 'IMDB Rating', 'Link']
