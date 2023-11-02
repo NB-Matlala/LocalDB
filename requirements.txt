@@ -6,3 +6,4 @@ pyquery
 beautifulsoup4
 random2
 python-time
+coverage==4.5.4 --no-binary :all: --no-cache
