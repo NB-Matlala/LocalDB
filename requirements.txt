@@ -1,4 +1,4 @@
-csv
+python-csv
 requests-html
 requests
 pyppeteer
