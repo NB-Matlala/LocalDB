@@ -5,7 +5,7 @@ import random
 import time
 
 session = HTMLSession()
-filename = 'Movie_Data3.csv'
+filename = 'Series_Data.csv'
 web_base = "https://web.soap-2day.to"
 
 fieldnames = ['Title', 'Category', 'Release Date', 'Genre', 'Country', 'Casts', 'IMDB Rating', 'Link']
@@ -21,7 +21,7 @@ def get_ser_last_page():
     return last_page
 
 start_page = 1
-ser_last = 5
+ser_last = get_ser_last_page()
 
 with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
