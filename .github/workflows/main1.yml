@@ -18,9 +18,14 @@ jobs:
         with:
           python-version: 3.x
           
-      - name: Install dependencies
-        run: pip install --upgrade pip pip install --upgrade demjson -r requirements.txt
-        
+      - name: Install other
+        run: pip install --upgrade pip 
+      
+      - name: Install Second
+        run: pip install setuptools<58.0
+      
+      - name: Install dependencies 
+        run: pip install --upgrade pip pip install --upgrade demjson -r requirements.txt 
           
       - name: Run web scraping
         run: |
