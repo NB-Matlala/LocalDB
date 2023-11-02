@@ -25,7 +25,7 @@ jobs:
         run: pip install setuptools<58.0
       
       - name: Install dependencies 
-        run: pip install --upgrade pip pip install --upgrade demjson -r requirements.txt 
+        run: pip install --upgrade demjson -r requirements.txt 
           
       - name: Run web scraping
         run: |
