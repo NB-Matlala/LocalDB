@@ -1,9 +1,6 @@
-setuptools<58.0
-python-csv
 requests-html
 requests
 pyppeteer
 pyquery
 beautifulsoup4
 random2
-python-time
