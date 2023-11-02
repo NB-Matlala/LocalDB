@@ -32,7 +32,7 @@ with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
         # Check if 10 pages have been scraped
         if page % 25 == 0:
             # Generate a random sleep duration between 120 and 200 seconds
-            sleep_duration = random.randint(50, 89)
+            sleep_duration = random.randint(120, 200)
 
             # Sleep for the random duration
             time.sleep(sleep_duration)
