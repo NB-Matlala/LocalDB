@@ -3,6 +3,6 @@ requests-html
 requests
 pyppeteer
 pyquery
-BeautifulSoup
+beautifulsoup4
 random
 time
