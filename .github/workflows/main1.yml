@@ -22,7 +22,7 @@ jobs:
         run: pip install --upgrade pip 
       
       - name: Install Second
-        run: pip install setuptools<58.0
+        run: pip install setuptools==57.5.0
       
       - name: Install dependencies 
         run: pip install --upgrade demjson -r requirements.txt 
