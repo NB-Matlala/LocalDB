@@ -22,7 +22,7 @@ def get_mov_last_page():
     return last_page
 
 start_page = 1
-mov_last = 5
+mov_last = get_mov_last_page()
 
 with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
