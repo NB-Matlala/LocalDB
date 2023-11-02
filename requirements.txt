@@ -4,5 +4,5 @@ requests
 pyppeteer
 pyquery
 beautifulsoup4
-random
-time
+random2
+python-time
