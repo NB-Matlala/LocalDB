@@ -63,23 +63,29 @@ with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
                 details = html_content.find_all('div', class_='dp-element')
 
                 # Finding specific movie details
-                rating = details[-2].find('span', itemprop='ratingValue')
-                rating = rating.text
-                release = details[-6].find('div', itemprop='dateCreated')
-                release = release.text.strip()
+                if len(details) >= 6:
+                    rating = details[-2].find('span', itemprop='ratingValue')
+                    rating = rating.text
+                    release = details[-6].find('div', itemprop='dateCreated')
+                    release = release.text.strip()
+    
+                    # Get all movie genre
+                    genre_list = details[-5].find_all('a', class_='entAllCats')
+                    for gen in genre_list:
+                        genres.append(gen.text)
+                    category = genres.pop(0)
+                    genre1 = ", ".join(genres)
+    
+                    country = details[-4].find('div', class_='dpe-content')
+                    country = country.text.strip()
+                    casts = details[-3].find('div', class_='dpe-content')
+                    casts = casts.text.strip()
 
-                # Get all movie genre
-                genre_list = details[-5].find_all('a', class_='entAllCats')
-                for gen in genre_list:
-                    genres.append(gen.text)
-                category = genres.pop(0)
-                genre1 = ", ".join(genres)
-
-                country = details[-4].find('div', class_='dpe-content')
-                country = country.text.strip()
-                casts = details[-3].find('div', class_='dpe-content')
-                casts = casts.text.strip()
-
+                # rest of your code
+                else:
+                # Handle the case where there are not enough elements in 'details'
+                    print("Not enough elements in 'details'")
+                    print(f"Element found: {details}")
                 # print(f"\nFound {count}:\nTitle: {movie_title}\nMovie Rating = {rating}")
                 # print(f'Release = {release}')
                 # print(f'Category = {category}')
