@@ -80,12 +80,12 @@ with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
                 casts = details[-3].find('div', class_='dpe-content')
                 casts = casts.text.strip()
 
-                print(f"\nFound {count}:\nTitle: {movie_title}\nMovie Rating = {rating}")
-                print(f'Release = {release}')
-                print(f'Category = {category}')
-                print(f'Genre = {genre1}')
-                print(f'Country = {country}')
-                print(f'Casts = {casts}')
+                # print(f"\nFound {count}:\nTitle: {movie_title}\nMovie Rating = {rating}")
+                # print(f'Release = {release}')
+                # print(f'Category = {category}')
+                # print(f'Genre = {genre1}')
+                # print(f'Country = {country}')
+                # print(f'Casts = {casts}')
 
             except Exception as e:
                 print(f"Error on page {page}, link {link}:\n{e}")
