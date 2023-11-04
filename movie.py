@@ -64,21 +64,21 @@ with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
 
                 # Finding specific movie details
                 if len(details) >= 6:
-                    rating = details[-2].find('span', itemprop='ratingValue')
+                    rating = details[6].find('span', itemprop='ratingValue')
                     rating = rating.text
-                    release = details[-6].find('div', itemprop='dateCreated')
+                    release = details[2].find('div', itemprop='dateCreated')
                     release = release.text.strip()
     
                     # Get all movie genre
-                    genre_list = details[-5].find_all('a', class_='entAllCats')
+                    genre_list = details[3].find_all('a', class_='entAllCats')
                     for gen in genre_list:
                         genres.append(gen.text)
                     category = genres.pop(0)
                     genre1 = ", ".join(genres)
     
-                    country = details[-4].find('div', class_='dpe-content')
+                    country = details[4].find('div', class_='dpe-content')
                     country = country.text.strip()
-                    casts = details[-3].find('div', class_='dpe-content')
+                    casts = details[5].find('div', class_='dpe-content')
                     casts = casts.text.strip()
 
                 # rest of your code
@@ -99,3 +99,5 @@ with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
             writer.writerow({
                 'Title': movie_title, 'Category': category, 'Release Date': release, 'Genre': genre1, 'Country': country,
                 'Casts': casts, 'IMDB Rating': rating, 'Link': link})
+            
+            print(f"Movie {count}: Page {page}")
