@@ -1,4 +1,4 @@
-name: Web Scraping
+name: Web ScrapeCar
 
 on:
   push:
@@ -30,10 +30,10 @@ jobs:
 
       - name: Run web scraping
         run: |
-          python movie.py 
+          python CarTest.py 
 
       - name: Archive CSV file
         uses: actions/upload-artifact@v2
         with:
-          name: Movie_Data.csv
-          path: Movie_Data.csv
+          name: CarsExtract2.csv
+          path: CarsExtract2.csv
