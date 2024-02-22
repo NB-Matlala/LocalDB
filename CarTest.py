@@ -10,6 +10,8 @@ session = HTMLSession()
 base_url = "https://www.cars.co.za"
 filename = 'CarsExtract2.csv'
 
+start_page = 1
+last_page = 50
 
 fieldnames = ['Car_ID', 'Title', 'Region', 'Make', 'Model', 'Variant', 'Suburb', 'Province', 'Price',
               'ExpectedPaymentPerMonth',
