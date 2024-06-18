@@ -1,321 +1,219 @@
+import aiohttp
+import asyncio
+import re
 from bs4 import BeautifulSoup
-from datetime import datetime
-import csv
-import time
+import json
 import random
-import threading
-from requests_html import HTMLSession
+import csv
+import math
+from datetime import datetime
 
-session = HTMLSession()
-base_url = "https://www.cars.co.za"
-filename = 'CarsExtract2.csv'
+async def fetch(session, url):
+    async with session.get(url) as response:
+        return await response.text()
 
-start_page = 1
-last_page = 50
+def getPages(soupPage, url):
+    try:
+        num_pg = soupPage.find('div', class_='listing-results-layout__mobile-item-count txt-small-regular')
+        num_pgV = num_pg.text.strip()
+        num_pgV = num_pgV.replace('\xa0', '').replace(' results', '')
+        pages = math.ceil(int(num_pgV) / 20)
+        return pages
+    except (ValueError, AttributeError) as e:
+        print(f"Failed to parse number of pages for URL: {url} - {e}")
+        return 0
 
-fieldnames = ['Car_ID', 'Title', 'Region', 'Make', 'Model', 'Variant', 'Suburb', 'Province', 'Price',
-              'ExpectedPaymentPerMonth',
-              'CarType', 'RegistrationYear', 'Mileage', 'Transmission', 'FuelType', 'PriceRating', 'Dealer',
-              'LastUpdated',
-              'PreviousOwners', 'ManufacturersColour', 'BodyType', 'ServiceHistory', 'WarrantyRemaining',
-              'IntroductionDate',
-              'EndDate', 'ServiceIntervalDistance', 'EnginePosition', 'EngineDetail', 'EngineCapacity',
-              'CylinderLayoutAndQuantity',
-              'FuelTypeEngine', 'FuelCapacity', 'FuelConsumption', 'FuelRange', 'PowerMaximum',
-              'TorqueMaximum', 'Acceleration', 'MaximumSpeed', 'CO2Emissions', 'Version', 'DealerUrl', 'Timestamp']
+def getPages(soupPage, url):
+    try:
+        num_pg = soupPage.find('div', class_='listing-results-layout__mobile-item-count txt-small-regular')
+        num_pgV = num_pg.text.strip()
+        num_pgV = num_pgV.replace('\xa0', '').replace(' results', '')
+        pages = math.ceil(int(num_pgV) / 20)
+        return pages
+    except (ValueError, AttributeError) as e:
+        print(f"Failed to parse number of pages for URL: {url} - {e}")
+        return 0
 
-with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
-    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-    writer.writeheader()
+def extractor(soup):
+    try:
+        title = soup.get('title')
+    except KeyError:
+        title = None
 
-    for page in range(start_page, last_page + 1):
-        if page % 10 == 0:
-            # Generate a random sleep duration between 120 and 200 seconds
-            sleep_duration = random.randint(30, 45)
+    property_type = None
+    if 'House' in title:
+        property_type = 'House'
+    elif 'Townhouse' in title:
+        property_type = 'Townhouse / Cluster'
+    elif 'Cluster' in title:
+        property_type = 'Townhouse / Cluster'
+    elif 'Flat' in title:
+        property_type = 'Apartment / Flat'
+    elif 'Apartment' in title:
+        property_type = 'Apartment / Flat'
+    elif 'Plot' in title:
+        property_type = 'Vacant Land / Plot'
+    elif 'Land' in title:
+        property_type = 'Vacant Land / Plot'
+    elif 'Smallholding' in title:
+        property_type = 'Farm / Smallholding'
+    elif 'Farm' in title:
+        property_type = 'Farm / Smallholding'
 
-            # Sleep for the random duration
-            time.sleep(sleep_duration)
+    try:
+        list_price = soup.find('div',class_='listing-result__price txt-heading-2')
+        list_priceV = list_price.text.strip()
+        list_priceV = list_priceV.replace('\xa0', ' ')
+    except KeyError:
+        list_priceV = None
+    try:
+        agent_name = None
+        agent_url = None
+        agent_div = soup.find('div', class_='listing-result__advertiser txt-small-regular')
 
-        response = session.get(f"https://www.cars.co.za/usedcars/?P={page}")
-        home_page = BeautifulSoup(response.content, 'html.parser')
-        # Find all the car listings on the page
-        divs_with_p_relative = home_page.findAll('div', style='position:relative')
-        # print(home_page)
-        count = 0
-        for div in divs_with_p_relative:
-            #       # Find the link to the car listing
-            link = div.find('a')
-            if link:
-                count += 1
-                try:
-                    found_link = (base_url + link['href'])
-                except Exception as e:
-                    print(f"Error: {e}")
+        if agent_div:
+            try:
+                agent_detail = agent_div.find('img', class_='listing-result__logo')
+                agent_name = agent_detail.get('alt')
+                agent_url = agent_detail.get('src')
+                agent_id_match = re.search(r'offices/(\d+)', agent_url)
+                if agent_id_match:
+                    agent_id = agent_id_match.group(1)
+                    agent_url = f"https://www.privateproperty.co.za/estate-agency/estate-agent/{agent_id}"
+            except:
+                agent_name = "Private Seller"
+                agent_url = None
+    except KeyError:
+        agent_name = None
+        agent_url = None
 
-                import re
-                # print(home_page)
-                car_id_match = re.search(r'/(\d+)/', found_link)
+    try:
+        size = None
+        features = soup.find_all('span', class_='listing-result__feature')
+        for feature in features:
+            icon = feature.find('svg').find('use').get('xlink:href')
+            if '#erf-size' in icon:
+                size = feature.text.strip()
+                size = size.replace('\xa0', ' ')
+            elif '#property-size' in icon:
+                size = feature.text.strip()
+                size = size.replace('\xa0', ' ')
+    except KeyError:
+        size = None
 
-                if car_id_match:
-                    car_id = car_id_match.group(1)
+    script_data = soup.find('script', type='application/ld+json').string
+    json_data = json.loads(script_data)
 
-                res = session.get(found_link)
-                # res = requests.get(found_link)
-                html_content = res.content.decode('utf-8')  # Decode the content to a string
-                try:
-                    # Define a regex pattern to match emojis
-                    emoji_pattern = re.compile(
-                        "["
-                        "\U0001F600-\U0001F64F"  # Emoticons
-                        "\U0001F300-\U0001F5FF"  # Symbols & Pictographs
-                        "\U0001F680-\U0001F6FF"  # Transport & Map Symbols
-                        "\U0001F700-\U0001F77F"  # Alchemical Symbols
-                        "\U0001F780-\U0001F7FF"  # Geometric Shapes Extended
-                        "\U0001F800-\U0001F8FF"  # Supplemental Arrows-C
-                        "\U0001F900-\U0001F9FF"  # Supplemental Symbols and Pictographs
-                        "\U0001FA00-\U0001FA6F"  # Chess Symbols
-                        "\U0001FA70-\U0001FAFF"  # Symbols and Pictographs Extended-A
-                        "\U00002702-\U000027B0"  # Dingbats
-                        "\U000024C2-\U0001F251"
-                        "]+",
-                        flags=re.UNICODE,
-                    )
+    try:
+        street_address = json_data['address']['streetAddress']
+    except KeyError:
+        street_address = None
+    try:
+        address_locality = json_data['address']['addressLocality']
+    except KeyError:
+        address_locality = None
+    try:
+        address_region = json_data['address']['addressRegion']
+    except KeyError:
+        address_region = None
 
-                    # Remove emojis using the regex pattern
-                    cleaned_html = emoji_pattern.sub(r'', html_content)
+    try:
+        url = json_data['url']
+        prop_ID_match = re.search(r'/([^/]+)$', url)
+        if prop_ID_match:
+            prop_ID = prop_ID_match.group(1)
+        else:
+            prop_ID = None
+    except KeyError:
+        url = None
+        prop_ID = None
 
-                    # Parse the cleaned HTML content
-                    car_page = BeautifulSoup(cleaned_html, 'html.parser')
+    bedroom = None
+    bathroom = None
+    garages = None
 
-                    # Append the parsed HTML content to a list
-                    parsed_html_list = [car_page]
+    for prop in json_data.get('additionalProperty', []):
+        if prop['name'] == 'Bedrooms':
+            bedroom = prop['value']
+        elif prop['name'] == 'Bathrooms':
+            bathroom = prop['value']
+        elif prop['name'] == 'Garages':
+            garages = prop['value']
+    current_datetime = datetime.now().strftime('%Y-%m-%d')
 
-                    # Find the script element containing the JSON-like data
-                    script_element = parsed_html_list[0].find('script', {'id': '__NEXT_DATA__'})
+    return {
+        "Listing ID": prop_ID, "Title": title, "Property Type": property_type, "Price": list_priceV,"Street": street_address,  "Region": address_region, "Locality": address_locality,
+        "Bedrooms": bedroom, "Bathrooms": bathroom,
+        "Floor Size": size, "Garages": garages,
+        "URL": url, "Agent Name": agent_name, "Agent Url": agent_url,"Time_stamp":current_datetime}
 
-                    # Extract the JSON-like data as a string
-                    json_data = script_element.string
-                    # Parse the JSON-like data into a Python dictionary
-                    import json
-                    data_dict = json.loads(json_data)
+async def main():
+    fieldnames = ['Listing ID', 'Title', 'Property Type', 'Price', 'Street', 'Region', 'Locality','Bedrooms', 'Bathrooms', 'Floor Size', 'Garages', 'URL',
+                  'Agent Name', 'Agent Url', 'Time_stamp']
+    filename = "PrivateProp4.csv"
 
-                    Car_ID = data_dict['props']['pageProps']['vehicle']['id']
-                    title = data_dict['props']['pageProps']['vehicle']['attributes']['title']
-                    location = data_dict['props']['pageProps']['vehicle']['attributes']['agent_locality']
+    async with aiohttp.ClientSession() as session:
+        with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(f"start Time: {start_time}")
 
-                    # Handle the case when location is None
-                    if location is None:
-                        dealer_info_div = car_page.find('div', class_='mantine-1bxn7ei')
+            async def process_province(prov):
+                response_text = await fetch(session, f"https://www.privateproperty.co.za/for-sale/mpumalanga/{prov}")
+                home_page = BeautifulSoup(response_text, 'html.parser')
 
-                        if dealer_info_div:
-                            # Extract the text from the relevant <p> elements
-                            dealership = dealer_info_div.find('p', class_='mb-1 text-bold').text.strip()
-                            location_and_province = dealer_info_div.find('p', class_='mb-0').text.strip()
+                links = []
+                ul = home_page.find('ul', class_='region-content-holder__unordered-list')
+                li_items = ul.find_all('li')
+                for area in li_items:
+                    link = area.find('a')
+                    link = f"https://www.privateproperty.co.za{link.get('href')}"
+                    links.append(link)
 
-                            # Split the location_and_province into location
-                            location = location_and_province.split(',')[0].strip()
+                new_links = []
+                for l in links:
+                    try:
+                        res_in_text = await fetch(session, f"{l}")
+                        inner = BeautifulSoup(res_in_text, 'html.parser')
+                        ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
+                        if ul2:
+                            li_items2 = ul2.find_all('li', class_='region-content-holder__list')
+                            for area2 in li_items2:
+                                link2 = area2.find('a')
+                                link2 = f"https://www.privateproperty.co.za{link2.get('href')}"
+                                new_links.append(link2)
+                        else:
+                            new_links.append(l)
+                    except aiohttp.ClientError as e:
+                        print(f"Request failed for {l}: {e}")
 
-                    brand = data_dict['props']['pageProps']['vehicle']['attributes']['make']
-                    model = data_dict['props']['pageProps']['vehicle']['attributes']['model']
-                    variant = data_dict['props']['pageProps']['vehicle']['attributes']['variant']
-                    suburb = None
-                    price = data_dict['props']['pageProps']['vehicle']['attributes']['price']
-                    expected_payment = None
-                    car_type = data_dict['props']['pageProps']['vehicle']['attributes']['new_or_used']
-                    registration_year = re.search(r'\d+', title)
-                    registration_year = registration_year.group()
-                    mileage = data_dict['props']['pageProps']['vehicle']['attributes']['mileage']
-                    transmission = data_dict['props']['pageProps']['vehicle']['attributes']['transmission']
-                    fuel_type = data_dict['props']['pageProps']['vehicle']['attributes']['fuel_type']
-                    price_rating = None
-                    dealer = data_dict['props']['pageProps']['vehicle']['attributes']['agent_name']
-                    last_updated = data_dict['props']['pageProps']['vehicle']['attributes']['date_time']
-                    previous_owners = None
-                    manufacturers_colour = data_dict['props']['pageProps']['vehicle']['attributes']['colour']
-                    body_type = data_dict['props']['pageProps']['vehicle']['attributes']['body_type']
-                    service_history = None
-                    warranty_remaining = None
-                    introduction_date = data_dict['props']['pageProps']['vehicle']['attributes']['date']
-                    end_date = None
-                    service_interval_distance = None
+                async def process_link(x):
+                    try:
+                        x_response_text = await fetch(session, x)
+                        x_page = BeautifulSoup(x_response_text, 'html.parser')
+                        num_pages = getPages(x_page, x)
 
-                    engine_position = None
-                    for spec in data_dict['props']['pageProps']['vehicle']['attributes']['specs']:
-                        if spec['title'] == "Engine":
-                            for attr in spec['attrs']:
-                                if attr['label'] == "Engine Position / Location":
-                                    engine_position = attr['value']
-                                    break
+                        for s in range(1, num_pages + 1):
+                            if s % 10 == 0:
+                                sleep_duration = random.randint(10, 15)
+                                await asyncio.sleep(sleep_duration)
 
-                    engine_detail = None
-                    engine_capacity = None
-                    for spec in data_dict['props']['pageProps']['vehicle']['attributes']['specs']:
-                        if spec['title'] == "Engine":
-                            for attr in spec['attrs']:
-                                if attr['label'] == "Engine Size":
-                                    engine_capacity = attr['value']
-                                    break
+                            prop_page_text = await fetch(session, f"{x}?page={s}")
+                            x_prop = BeautifulSoup(prop_page_text, 'html.parser')
+                            prop_contain = x_prop.find_all('a', class_='listing-result')
+                            for prop in prop_contain:
+                                data = extractor(prop)
+                                writer.writerow(data)
+                    except Exception as e:
+                        print(f"An error occurred while processing link {x}: {e}")
 
-                    cylinder_layout = None
-                    for spec in data_dict['props']['pageProps']['vehicle']['attributes']['specs']:
-                        if spec['title'] == "Engine":
-                            for attr in spec['attrs']:
-                                if attr['label'] == "Cylinders":
-                                    cylinder_layout = attr['value']
-                                    break
+                await asyncio.gather(*(process_link(x) for x in new_links))
 
-                    fuel_type_engine = None
-                    for spec in data_dict['props']['pageProps']['vehicle']['attributes']['specs']:
-                        if spec['title'] == "Engine":
-                            for attr in spec['attrs']:
-                                if attr['label'] == "Fuel Type":
-                                    fuel_type_engine = attr['value']
-                                    break
+            await asyncio.gather(*(process_province(prov) for prov in range(2, 11)))
 
-                    fuel_capacity = None
-                    for spec in data_dict['props']['pageProps']['vehicle']['attributes']['specs']:
-                        if spec['title'] == "Economy":
-                            for attr in spec['attrs']:
-                                if attr['label'] == "Fuel tank capacity":
-                                    fuel_capacity = attr['value']
-                                    break
+            end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(f"\n\nend Time: {end_time}")
 
-                    fuel_consumption = None
-                    for spec in data_dict['props']['pageProps']['vehicle']['attributes']['specs']:
-                        if spec['title'] == "Summary":
-                            for attr in spec['attrs']:
-                                if attr['label'] == "Average Fuel Economy":
-                                    fuel_consumption = attr['value']
-                                    break
-
-                    fuel_range = None
-                    for spec in data_dict['props']['pageProps']['vehicle']['attributes']['specs']:
-                        if spec['title'] == "Economy":
-                            for attr in spec['attrs']:
-                                if attr['label'] == "Fuel range":
-                                    fuel_range = attr['value']
-                                    break
-
-                    power_max = None
-                    for spec in data_dict['props']['pageProps']['vehicle']['attributes']['specs']:
-                        if spec['title'] == "Summary":
-                            for attr in spec['attrs']:
-                                if attr['label'] == "Power Maximum Total":
-                                    power_max = attr['value']
-                                    break
-
-                    torque_max = None
-                    for spec in data_dict['props']['pageProps']['vehicle']['attributes']['specs']:
-                        if spec['title'] == "Engine":
-                            for attr in spec['attrs']:
-                                if attr['label'] == "Torque Max":
-                                    torque_max = attr['value']
-                                    break
-
-                    acceleration = None
-                    for spec in data_dict['props']['pageProps']['vehicle']['attributes']['specs']:
-                        if spec['title'] == "Performance":
-                            for attr in spec['attrs']:
-                                if attr['label'] == "0-100Kph":
-                                    acceleration = attr['value']
-                                    break
-
-                    maximum_speed = None
-                    for spec in data_dict['props']['pageProps']['vehicle']['attributes']['specs']:
-                        if spec['title'] == "Performance":
-                            for attr in spec['attrs']:
-                                if attr['label'] == "Top speed":
-                                    maximum_speed = attr['value']
-                                    break
-
-                    co2_emissions = None
-                    for spec in data_dict['props']['pageProps']['vehicle']['attributes']['specs']:
-                        if spec['title'] == "Economy":
-                            for attr in spec['attrs']:
-                                if attr['label'] == "Co2":
-                                    co2_emissions = attr['value']
-                                    break
-
-                    current_datetime = datetime.now().strftime('%Y-%m-%d')
-                    province_name = data_dict['props']['pageProps']['vehicle']['attributes']['province']
-                    # Define a dictionary to hold the data
-                    dealer_link = car_page.find('a', class_='ClickableCard_card__EHFn3')
-                    basedealer = "https://www.cars.co.za"
-                    if dealer_link:
-                        link_dealer = dealer_link
-                        DealerUrl = (basedealer + link_dealer['href'])
-
-                    else:
-                        DealerUrl = None
-
-                    car_data = {
-                        'Car_ID': car_id,
-                        'Title': title,
-                        'Region': location,
-                        'Make': brand,
-                        'Model': model,
-                        'Variant': variant,
-                        'Suburb': suburb,
-                        'Province': province_name,
-                        'Price': price,
-                        'ExpectedPaymentPerMonth': expected_payment,
-                        'CarType': car_type,
-                        'RegistrationYear': registration_year,
-                        'Mileage': mileage,
-                        'Transmission': transmission,
-                        'FuelType': fuel_type,
-                        'PriceRating': price_rating,
-                        'Dealer': dealer,
-                        'LastUpdated': last_updated,
-                        'PreviousOwners': previous_owners,
-                        'ManufacturersColour': manufacturers_colour,
-                        'BodyType': body_type,
-                        'ServiceHistory': service_history,
-                        'WarrantyRemaining': warranty_remaining,
-                        'IntroductionDate': introduction_date,
-                        'EndDate': end_date,
-                        'ServiceIntervalDistance': service_interval_distance,
-                        'EnginePosition': engine_position,
-                        'EngineDetail': engine_detail,
-                        'EngineCapacity': engine_capacity,
-                        'CylinderLayoutAndQuantity': cylinder_layout,
-                        'FuelTypeEngine': fuel_type_engine,
-                        'FuelCapacity': fuel_capacity,
-                        'FuelConsumption': fuel_consumption,
-                        'FuelRange': fuel_range,
-                        'PowerMaximum': power_max,
-                        'TorqueMaximum': torque_max,
-                        'Acceleration': acceleration,
-                        'MaximumSpeed': maximum_speed,
-                        'CO2Emissions': co2_emissions,
-                        'Version': 1,
-                        'DealerUrl': DealerUrl,
-                        'Timestamp': current_datetime
-                    }
-                    print(f"Page {page} Car {count}: {car_id}")
-                    writer.writerow(
-                        {'Car_ID':car_data['Car_ID'], 'Title': car_data['Title'], 'Region' : car_data['Region'],
-                             'Make' : car_data['Make'], 'Model' : car_data['Model'], 'Variant' : car_data['Variant'],
-                             'Suburb' : car_data['Suburb'], 'Province' : car_data['Province'], 'Price' : car_data['Price'],
-                             'ExpectedPaymentPerMonth' : car_data['ExpectedPaymentPerMonth'], 'CarType':car_data['CarType'],
-                             'RegistrationYear' : car_data['RegistrationYear'], 'Mileage' : car_data['Mileage'],
-                             'Transmission' : car_data['Transmission'], 'FuelType' : car_data['FuelType'],
-                             'PriceRating':car_data['PriceRating'], 'Dealer':car_data['Dealer'],
-                             'LastUpdated':car_data['LastUpdated'], 'PreviousOwners':car_data['PreviousOwners'],
-                             'ManufacturersColour':car_data['ManufacturersColour'], 'BodyType':car_data['BodyType'],
-                             'ServiceHistory':car_data['ServiceHistory'], 'WarrantyRemaining':car_data['WarrantyRemaining'],
-                             'IntroductionDate':car_data['IntroductionDate'], 'EndDate':car_data['EndDate'],
-                             'ServiceIntervalDistance':car_data['ServiceIntervalDistance'],
-                             'EnginePosition':car_data['EnginePosition'], 'EngineDetail':car_data['EngineDetail'],
-                             'EngineCapacity':car_data['EngineCapacity'],
-                             'CylinderLayoutAndQuantity':car_data['CylinderLayoutAndQuantity'],
-                             'FuelTypeEngine':car_data['FuelTypeEngine'], 'FuelCapacity':car_data['FuelCapacity'],
-                             'FuelConsumption':car_data['FuelConsumption'], 'FuelRange':car_data['FuelRange'],
-                             'PowerMaximum':car_data['PowerMaximum'], 'TorqueMaximum':car_data['TorqueMaximum'],
-                             'Acceleration':car_data['Acceleration'], 'MaximumSpeed':car_data['MaximumSpeed'],
-                             'CO2Emissions':car_data['CO2Emissions'], 'Version':'1', 'DealerUrl':car_data['DealerUrl'],
-                             'Timestamp': car_data['Timestamp']})
-                except Exception as e:
-                    print(f"Final Error: {e}")
-				
-    
+# Running the main coroutine
+asyncio.run(main())
