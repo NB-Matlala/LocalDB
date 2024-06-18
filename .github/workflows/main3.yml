@@ -35,5 +35,5 @@ jobs:
       - name: Archive CSV file
         uses: actions/upload-artifact@v2
         with:
-          name: CarsExtract2.csv
-          path: CarsExtract2.csv
+          name: PrivatePropRes.csv
+          path: PrivatePropRes.csv
