@@ -150,7 +150,7 @@ def extractor(soup):
 async def main():
     fieldnames = ['Listing ID', 'Title', 'Property Type', 'Price', 'Street', 'Region', 'Locality','Bedrooms', 'Bathrooms', 'Floor Size', 'Garages', 'URL',
                   'Agent Name', 'Agent Url', 'Time_stamp']
-    filename = "PrivateProp4.csv"
+    filename = "CarsExtract2.csv"
 
     async with aiohttp.ClientSession() as session:
         with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
