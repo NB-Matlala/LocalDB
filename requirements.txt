@@ -5,3 +5,4 @@ pyquery
 beautifulsoup4
 random2
 threaded
+aiohttp
