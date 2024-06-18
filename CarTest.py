@@ -664,7 +664,7 @@ async def main():
 # Running the main coroutine
 asyncio.run(main())
 
-sas_url = f"https://stautotrader.blob.core.windows.net/privateprop/PrivatePropRes.csv?sv=2021-10-04&st=2023-10-26T06%3A25%3A32Z&se=2030-10-27T06%3A25%3A00Z&sr=c&sp=racwdxltf&sig=sUrO3DJetYAJLEG8AFAV2zJ13xQPX4uL2XgJwzHFnw8%3D"
+sas_url = f"https://stautotrader.blob.core.windows.net/privateprop/PrivatePropRes.csv?sv=2021-10-04&ss=btqf&srt=sco&st=2023-10-17T07%3A39%3A17Z&se=2030-10-18T07%3A39%3A00Z&sp=rwdxftlacup&sig=%2BTFZttmuMZLkl%2Bq%2Bf2t%2FPNBSJkWUzw52PPp1sL9X8Wk%3D"
 client = BlobClient.from_blob_url(sas_url)
 client.upload_blob("PrivatePropRes.csv", overwrite=True)  
 
