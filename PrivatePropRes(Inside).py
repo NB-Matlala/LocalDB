@@ -155,66 +155,66 @@ async def main():
     ids = []
 
     async with aiohttp.ClientSession() as session:
-        start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        async def process_province(prov):
-            response_text = await fetch(session, f"https://www.privateproperty.co.za/for-sale/mpumalanga/{prov}")
-            home_page = BeautifulSoup(response_text, 'html.parser')
-
-            links = []
-            ul = home_page.find('ul', class_='region-content-holder__unordered-list')
-            li_items = ul.find_all('li')
-            for area in li_items:
-                link = area.find('a')
-                link = f"https://www.privateproperty.co.za{link.get('href')}"
-                links.append(link)
-
-            new_links = []
-            for l in links:
-                try:
-                    res_in_text = await fetch(session, f"{l}")
-                    inner = BeautifulSoup(res_in_text, 'html.parser')
-                    ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
-                    if ul2:
-                        li_items2 = ul2.find_all('li', class_='region-content-holder__list')
-                        for area2 in li_items2:
-                            link2 = area2.find('a')
-                            link2 = f"https://www.privateproperty.co.za{link2.get('href')}"
-                            new_links.append(link2)
-                    else:
-                        new_links.append(l)
-                except aiohttp.ClientError as e:
-                    print(f"Request failed for {l}: {e}")
-
-            async def process_link(x):
-                try:
-                    x_response_text = await fetch(session, x)
-                    x_page = BeautifulSoup(x_response_text, 'html.parser')
-                    num_pages = getPages(x_page, x)
-
-                    for s in range(1, num_pages + 1):
-                        if s % 10 == 0:
-                            sleep_duration = random.randint(10, 15)
-                            await asyncio.sleep(sleep_duration)
-
-                        prop_page_text = await fetch(session, f"{x}?page={s}")
-                        x_prop = BeautifulSoup(prop_page_text, 'html.parser')
-                        prop_contain = x_prop.find_all('a', class_='listing-result')
-                        for prop in prop_contain:
-                            data = getIds(prop)
-                            ids.append(data)
-                except Exception as e:
-                    print(f"An error occurred while processing link {x}: {e}")
-
-            tasks = [process_link(x) for x in new_links]
-            await asyncio.gather(*tasks)
-
-        async def process_ids():
-            async with aiohttp.ClientSession() as session:
-                with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
-                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            async def process_province(prov):
+                response_text = await fetch(session, f"https://www.privateproperty.co.za/for-sale/mpumalanga/{prov}")
+                home_page = BeautifulSoup(response_text, 'html.parser')
+    
+                links = []
+                ul = home_page.find('ul', class_='region-content-holder__unordered-list')
+                li_items = ul.find_all('li')
+                for area in li_items:
+                    link = area.find('a')
+                    link = f"https://www.privateproperty.co.za{link.get('href')}"
+                    links.append(link)
+    
+                new_links = []
+                for l in links:
+                    try:
+                        res_in_text = await fetch(session, f"{l}")
+                        inner = BeautifulSoup(res_in_text, 'html.parser')
+                        ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
+                        if ul2:
+                            li_items2 = ul2.find_all('li', class_='region-content-holder__list')
+                            for area2 in li_items2:
+                                link2 = area2.find('a')
+                                link2 = f"https://www.privateproperty.co.za{link2.get('href')}"
+                                new_links.append(link2)
+                        else:
+                            new_links.append(l)
+                    except aiohttp.ClientError as e:
+                        print(f"Request failed for {l}: {e}")
+    
+                async def process_link(x):
+                    try:
+                        x_response_text = await fetch(session, x)
+                        x_page = BeautifulSoup(x_response_text, 'html.parser')
+                        num_pages = getPages(x_page, x)
+    
+                        for s in range(1, num_pages + 1):
+                            if s % 10 == 0:
+                                sleep_duration = random.randint(10, 15)
+                                await asyncio.sleep(sleep_duration)
+    
+                            prop_page_text = await fetch(session, f"{x}?page={s}")
+                            x_prop = BeautifulSoup(prop_page_text, 'html.parser')
+                            prop_contain = x_prop.find_all('a', class_='listing-result')
+                            for prop in prop_contain:
+                                data = getIds(prop)
+                                ids.append(data)
+                    except Exception as e:
+                        print(f"An error occurred while processing link {x}: {e}")
+    
+                tasks = [process_link(x) for x in new_links]
+                await asyncio.gather(*tasks)
+    
+            async def process_ids():
+                async with aiohttp.ClientSession() as session:
                     count = 0
-
+    
                     async def process_id(list_id):
                         nonlocal count
                         count += 1
@@ -226,19 +226,19 @@ async def main():
                             writer.writerow(data)
                         except Exception as e:
                             print(f"An error occurred while processing ID {list_id}: {e}")
-
+    
                         if count % 2000 == 0:
                             print(f"Processed {count} IDs, sleeping for 20 seconds...")
                             await asyncio.sleep(20)
-
+    
                     tasks = [process_id(list_id) for list_id in ids]
                     await asyncio.gather(*tasks)
-
-        await asyncio.gather(*(process_province(prov) for prov in range(2, 11)))
-        await process_ids()
-        end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"Start Time: {start_time}")
-        print(f"End Time: {end_time}")
+    
+            await asyncio.gather(*(process_province(prov) for prov in range(2, 11)))
+            await process_ids()
+            end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(f"Start Time: {start_time}")
+            print(f"End Time: {end_time}")
     
     connection_string = "SharedAccessSignature=sv=2021-10-04&ss=btqf&srt=sco&st=2023-10-17T07%3A39%3A17Z&se=2030-10-18T07%3A39%3A00Z&sp=rwdxftlacup&sig=%2BTFZttmuMZLkl%2Bq%2Bf2t%2FPNBSJkWUzw52PPp1sL9X8Wk%3D;BlobEndpoint=https://stautotrader.blob.core.windows.net/;FileEndpoint=https://stautotrader.file.core.windows.net/;QueueEndpoint=https://stautotrader.queue.core.windows.net/;TableEndpoint=https://stautotrader.table.core.windows.net/;"
     container_name = "privateprop"
