@@ -7,6 +7,7 @@ import random
 import csv
 import math
 from datetime import datetime
+from azure.storage.blob import BlobClient
 
 
 async def fetch(session, url):
@@ -150,7 +151,7 @@ async def main():
     fieldnames = ['Listing ID', 'Erf Size', 'Property Type', 'Floor Size', 'Rates and taxes', 'Levies',
                   'Bedrooms', 'Bathrooms', 'Lounges', 'Dining', 'Garages', 'Covered Parking', 'Storeys',
                   'Agent Name', 'Agent Url', 'Time_stamp']
-    filename = "PrivatePropResInside.csv"
+    filename = "PrivatePropRes(Inside).csv"
     ids = []
 
     async with aiohttp.ClientSession() as session:
@@ -238,6 +239,16 @@ async def main():
         end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"Start Time: {start_time}")
         print(f"End Time: {end_time}")
+    
+    connection_string = "SharedAccessSignature=sv=2021-10-04&ss=btqf&srt=sco&st=2023-10-17T07%3A39%3A17Z&se=2030-10-18T07%3A39%3A00Z&sp=rwdxftlacup&sig=%2BTFZttmuMZLkl%2Bq%2Bf2t%2FPNBSJkWUzw52PPp1sL9X8Wk%3D;BlobEndpoint=https://stautotrader.blob.core.windows.net/;FileEndpoint=https://stautotrader.file.core.windows.net/;QueueEndpoint=https://stautotrader.queue.core.windows.net/;TableEndpoint=https://stautotrader.table.core.windows.net/;"
+    container_name = "privateprop"
+    blob_name = "PrivatePropRes(Inside).csv"
+
+    blob_client = BlobClient.from_connection_string(connection_string, container_name, blob_name)
+    
+    with open(filename, "rb") as data:
+        blob_client.upload_blob(data, overwrite=True)
+        print(f"File uploaded to Azure Blob Storage: {blob_name}")
 
 # Running the main coroutine
 asyncio.run(main())
