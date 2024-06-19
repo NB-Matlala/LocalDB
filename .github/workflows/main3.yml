@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  scrape:
+  scraperes:
     runs-on: ubuntu-latest
 
     steps:
