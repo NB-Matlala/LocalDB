@@ -1,4 +1,4 @@
-name: Web Scraping 2
+name: Web PrivPropCom
 
 on:
   push:
@@ -30,10 +30,10 @@ jobs:
 
       - name: Run web scraping
         run: |
-          python series.py 
+          python PrivatePropCom.py 
 
       - name: Archive CSV file
         uses: actions/upload-artifact@v2
         with:
-          name: Series_Data.csv
-          path: Series_Data.csv
+          name: PrivatePropCom.csv
+          path: PrivatePropCom.csv
