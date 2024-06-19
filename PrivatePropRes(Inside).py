@@ -157,6 +157,7 @@ async def main():
     async with aiohttp.ClientSession() as session:
         with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
             async def process_province(prov):
