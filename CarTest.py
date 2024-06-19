@@ -514,7 +514,6 @@ async def main():
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print(f"start Time: {start_time}")
 
             async def process_province(prov):
                 response_text = await fetch(session, f"https://www.privateproperty.co.za/for-sale/mpumalanga/{prov}")
@@ -650,21 +649,34 @@ async def main():
                     except Exception as e:
                         print(f"An error occurred while processing link {x}: {e}")
 
-                await asyncio.gather(*(process_link10(x) for x in new_links))   
-                await asyncio.gather(*(process_link5(x) for x in new_links))
-                await asyncio.gather(*(process_link2(x) for x in new_links))
-                await asyncio.gather(*(process_link7(x) for x in new_links))
-                await asyncio.gather(*(process_link1(x) for x in new_links))
+                tasks = []
+                for x in new_links:
+                    tasks.extend([process_link10(x), process_link5(x), process_link2(x), process_link3(x), process_link7(x)])
+                
+                await asyncio.gather(*tasks)
 
             await asyncio.gather(*(process_province(prov) for prov in range(2, 11)))
-
             end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print(f"\n\nend Time: {end_time}")
+            print(f"Start Time: {start_time}")
+            print(f"End Time: {end_time}")
+
+
+        # Upload the CSV file to Azure Blob Storage
+        connection_string = "SharedAccessSignature=sv=2021-10-04&ss=btqf&srt=sco&st=2023-10-17T07%3A39%3A17Z&se=2030-10-18T07%3A39%3A00Z&sp=rwdxftlacup&sig=%2BTFZttmuMZLkl%2Bq%2Bf2t%2FPNBSJkWUzw52PPp1sL9X8Wk%3D;BlobEndpoint=https://stautotrader.blob.core.windows.net/;FileEndpoint=https://stautotrader.file.core.windows.net/;QueueEndpoint=https://stautotrader.queue.core.windows.net/;TableEndpoint=https://stautotrader.table.core.windows.net/;"
+        container_name = "privateprop"
+        blob_name = "PrivatePropRes.csv"
+
+        blob_client = BlobClient.from_connection_string(connection_string, container_name, blob_name)
+        
+        with open(filename, "rb") as data:
+            blob_client.upload_blob(data, overwrite=True)
+            print(f"File uploaded to Azure Blob Storage: {blob_name}")
+
+            
+
+
 
 # Running the main coroutine
 asyncio.run(main())
 
-sas_url = f"https://stautotrader.blob.core.windows.net/privateprop/PrivatePropRes.csv?sv=2021-10-04&ss=btqf&srt=sco&st=2023-10-17T07%3A39%3A17Z&se=2030-10-18T07%3A39%3A00Z&sp=rwdxftlacup&sig=%2BTFZttmuMZLkl%2Bq%2Bf2t%2FPNBSJkWUzw52PPp1sL9X8Wk%3D"
-client = BlobClient.from_blob_url(sas_url)
-client.upload_blob("PrivatePropRes.csv", overwrite=True)  
 
