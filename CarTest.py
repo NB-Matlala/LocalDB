@@ -651,7 +651,7 @@ async def main():
 
                 tasks = []
                 for x in new_links:
-                    tasks.extend([process_link10(x), process_link5(x), process_link2(x), process_link3(x), process_link7(x)])
+                    tasks.extend([process_link10(x), process_link5(x), process_link2(x), process_link1(x), process_link7(x)])
                 
                 await asyncio.gather(*tasks)
 
