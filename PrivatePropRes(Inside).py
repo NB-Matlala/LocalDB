@@ -124,20 +124,26 @@ def extractor(soup, url): # extracts from created urls
         parking = None
         storeys = None
 
+    agent_name = None
+    agent_url = None
+
     try:
-        agent_name = None
-        agent_url = None
         script_tag = soup.find('script', string=re.compile(r'const serverVariables'))
         if script_tag:
             script_content = script_tag.string
             script_data2 = re.search(r'const serverVariables\s*=\s*({.*?});', script_content, re.DOTALL).group(1)
             json_data = json.loads(script_data2)
-            agent_name = json_data['bundleParams']['agencyInfo']['agencyName']
-            agent_url = json_data['bundleParams']['agencyInfo']['agencyPageUrl']
-            agent_url = f"https://www.privateproperty.co.za{agent_url}"
+            try:
+                agent_name = json_data['bundleParams']['agencyInfo']['agencyName']
+                agent_url = json_data['bundleParams']['agencyInfo']['agencyPageUrl']
+                agent_url = f"https://www.privateproperty.co.za{agent_url}"
+            except :
+                agent_name = "Private Seller"
+                agent_url = None                        
     except (AttributeError, KeyError) as e:
         agent_name = None
         agent_url = None
+
     current_datetime = datetime.now().strftime('%Y-%m-%d')
 
     return {
@@ -213,28 +219,27 @@ async def main():
                 await asyncio.gather(*tasks)
     
             async def process_ids():
-                async with aiohttp.ClientSession() as session:
-                    count = 0
-    
-                    async def process_id(list_id):
-                        nonlocal count
-                        count += 1
-                        list_url = f"https://www.privateproperty.co.za/for-sale/something/something/something/{list_id}"
-                        try:
-                            listing = await fetch(session, list_url)
-                            list_page = BeautifulSoup(listing, 'html.parser')
-                            data = extractor(list_page, list_url)
-                            writer.writerow(data)
-                        except Exception as e:
-                            print(f"An error occurred while processing ID {list_id}: {e}")
-    
-                        if count % 2000 == 0:
-                            print(f"Processed {count} IDs, sleeping for 20 seconds...")
-                            await asyncio.sleep(20)
-    
-                    tasks = [process_id(list_id) for list_id in ids]
-                    await asyncio.gather(*tasks)
-    
+                count = 0
+
+                async def process_id(list_id):
+                    nonlocal count
+                    count += 1
+                    list_url = f"https://www.privateproperty.co.za/for-sale/something/something/something/{list_id}"
+                    try:
+                        listing = await fetch(session, list_url)
+                        list_page = BeautifulSoup(listing, 'html.parser')
+                        data = extractor(list_page, list_url)
+                        writer.writerow(data)
+                    except Exception as e:
+                        print(f"An error occurred while processing ID {list_id}: {e}")
+
+                    if count % 500 == 0:
+                        print(f"Processed {count} IDs, sleeping for 20 seconds...")
+                        await asyncio.sleep(45)
+
+                tasks = [process_id(list_id) for list_id in ids]
+                await asyncio.gather(*tasks)
+
             await asyncio.gather(*(process_province(prov) for prov in range(2, 11)))
             await process_ids()
             end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
