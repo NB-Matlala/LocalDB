@@ -7,12 +7,11 @@ import random
 import csv
 import math
 from datetime import datetime
-from azure.storage.blob import BlobClient
 
-
-async def fetch(session, url):
-    async with session.get(url) as response:
-        return await response.text()
+async def fetch(session, url, semaphore):
+    async with semaphore:
+        async with session.get(url) as response:
+            return await response.text()
 
 ######################################Functions##########################################################
 def getPages(soupPage, url):
@@ -41,7 +40,6 @@ def getIds(soup):
 
     return prop_ID
 
-
 def extractor(soup, url): # extracts from created urls
     try:
         prop_ID = None
@@ -50,7 +48,7 @@ def extractor(soup, url): # extracts from created urls
         rates = None
         levy = None
 
-        prop_div = soup.find('div',class_='property-features')
+        prop_div = soup.find('div', class_='property-features')
         lists = prop_div.find('ul', class_='property-features__list')
         features = lists.find_all('li')
         for feature in features:
@@ -109,7 +107,7 @@ def extractor(soup, url): # extracts from created urls
                 dining = feat.find('span',class_='property-features__value').text.strip()
             elif '#garages' in feat_icon:
                 garage = feat.find('span',class_='property-features__value').text.strip()
-            elif '#covered-parkiung' in feat_icon:
+            elif '#covered-parking' in feat_icon:
                 parking = feat.find('span',class_='property-features__value').text.strip()
             elif '#storeys' in feat_icon:
                 storeys = feat.find('span',class_='property-features__value').text.strip()
@@ -139,7 +137,7 @@ def extractor(soup, url): # extracts from created urls
                 agent_url = f"https://www.privateproperty.co.za{agent_url}"
             except :
                 agent_name = "Private Seller"
-                agent_url = None                        
+                agent_url = None
     except (AttributeError, KeyError) as e:
         agent_name = None
         agent_url = None
@@ -149,7 +147,7 @@ def extractor(soup, url): # extracts from created urls
     return {
         "Listing ID": prop_ID, "Erf Size": erfSize, "Property Type": prop_type, "Floor Size": floor_size,
         "Rates and taxes": rates, "Levies": levy, "Bedrooms": beds, "Bathrooms": baths, "Lounges": lounge,
-        "Dining": dining, "Garages": garage, "Covered Parking": parking, "Storeys": storeys, "Agent name": agent_name,
+        "Dining": dining, "Garages": garage, "Covered Parking": parking, "Storeys": storeys, "Agent Name": agent_name,
         "Agent Url": agent_url, "Time_stamp": current_datetime}
 
 ######################################Functions##########################################################
@@ -157,19 +155,20 @@ async def main():
     fieldnames = ['Listing ID', 'Erf Size', 'Property Type', 'Floor Size', 'Rates and taxes', 'Levies',
                   'Bedrooms', 'Bathrooms', 'Lounges', 'Dining', 'Garages', 'Covered Parking', 'Storeys',
                   'Agent Name', 'Agent Url', 'Time_stamp']
-    filename = "PrivatePropRes(Inside).csv"
+    filename = "PrivatePropResInside.csv"
     ids = []
+    semaphore = asyncio.Semaphore(600)
 
     async with aiohttp.ClientSession() as session:
         with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            
+
             async def process_province(prov):
-                response_text = await fetch(session, f"https://www.privateproperty.co.za/for-sale/mpumalanga/{prov}")
+                response_text = await fetch(session, f"https://www.privateproperty.co.za/for-sale/mpumalanga/{prov}", semaphore)
                 home_page = BeautifulSoup(response_text, 'html.parser')
-    
+
                 links = []
                 ul = home_page.find('ul', class_='region-content-holder__unordered-list')
                 li_items = ul.find_all('li')
@@ -177,11 +176,11 @@ async def main():
                     link = area.find('a')
                     link = f"https://www.privateproperty.co.za{link.get('href')}"
                     links.append(link)
-    
+
                 new_links = []
                 for l in links:
                     try:
-                        res_in_text = await fetch(session, f"{l}")
+                        res_in_text = await fetch(session, f"{l}", semaphore)
                         inner = BeautifulSoup(res_in_text, 'html.parser')
                         ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
                         if ul2:
@@ -194,19 +193,19 @@ async def main():
                             new_links.append(l)
                     except aiohttp.ClientError as e:
                         print(f"Request failed for {l}: {e}")
-    
+
                 async def process_link(x):
                     try:
-                        x_response_text = await fetch(session, x)
+                        x_response_text = await fetch(session, x, semaphore)
                         x_page = BeautifulSoup(x_response_text, 'html.parser')
                         num_pages = getPages(x_page, x)
-    
+
                         for s in range(1, num_pages + 1):
                             if s % 10 == 0:
                                 sleep_duration = random.randint(10, 15)
                                 await asyncio.sleep(sleep_duration)
-    
-                            prop_page_text = await fetch(session, f"{x}?page={s}")
+
+                            prop_page_text = await fetch(session, f"{x}?page={s}", semaphore)
                             x_prop = BeautifulSoup(prop_page_text, 'html.parser')
                             prop_contain = x_prop.find_all('a', class_='listing-result')
                             for prop in prop_contain:
@@ -214,28 +213,27 @@ async def main():
                                 ids.append(data)
                     except Exception as e:
                         print(f"An error occurred while processing link {x}: {e}")
-    
+
                 tasks = [process_link(x) for x in new_links]
                 await asyncio.gather(*tasks)
-    
+
             async def process_ids():
                 count = 0
 
                 async def process_id(list_id):
                     nonlocal count
                     count += 1
+                    if count % 1200 == 0:
+                        print(f"Processed {count} IDs, sleeping for 20 seconds...")
+                        await asyncio.sleep(55)
                     list_url = f"https://www.privateproperty.co.za/for-sale/something/something/something/{list_id}"
                     try:
-                        listing = await fetch(session, list_url)
+                        listing = await fetch(session, list_url, semaphore)
                         list_page = BeautifulSoup(listing, 'html.parser')
                         data = extractor(list_page, list_url)
                         writer.writerow(data)
                     except Exception as e:
                         print(f"An error occurred while processing ID {list_id}: {e}")
-
-                    if count % 500 == 0:
-                        print(f"Processed {count} IDs, sleeping for 45 seconds...")
-                        await asyncio.sleep(45)
 
                 tasks = [process_id(list_id) for list_id in ids]
                 await asyncio.gather(*tasks)
@@ -245,7 +243,7 @@ async def main():
             end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             print(f"Start Time: {start_time}")
             print(f"End Time: {end_time}")
-    
+
     connection_string = "SharedAccessSignature=sv=2021-10-04&ss=btqf&srt=sco&st=2023-10-17T07%3A39%3A17Z&se=2030-10-18T07%3A39%3A00Z&sp=rwdxftlacup&sig=%2BTFZttmuMZLkl%2Bq%2Bf2t%2FPNBSJkWUzw52PPp1sL9X8Wk%3D;BlobEndpoint=https://stautotrader.blob.core.windows.net/;FileEndpoint=https://stautotrader.file.core.windows.net/;QueueEndpoint=https://stautotrader.queue.core.windows.net/;TableEndpoint=https://stautotrader.table.core.windows.net/;"
     container_name = "privateprop"
     blob_name = "PrivatePropRes(Inside).csv"
