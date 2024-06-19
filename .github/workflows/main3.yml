@@ -1,4 +1,4 @@
-name: Web ScrapeCar
+name: Web PrivPropRes
 
 on:
   push:
@@ -30,7 +30,7 @@ jobs:
 
       - name: Run web scraping
         run: |
-          python CarTest.py 
+          python PrivatePropRes.py 
 
       - name: Archive CSV file
         uses: actions/upload-artifact@v2
