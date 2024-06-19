@@ -234,7 +234,7 @@ async def main():
                         print(f"An error occurred while processing ID {list_id}: {e}")
 
                     if count % 500 == 0:
-                        print(f"Processed {count} IDs, sleeping for 20 seconds...")
+                        print(f"Processed {count} IDs, sleeping for 45 seconds...")
                         await asyncio.sleep(45)
 
                 tasks = [process_id(list_id) for list_id in ids]
