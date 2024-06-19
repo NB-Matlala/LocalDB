@@ -30,7 +30,7 @@ jobs:
 
       - name: Run web scraping
         run: |
-          python PrivatePropRes.py 
+          python PrivatePropRes(Inside).py 
 
       - name: Archive CSV file
         uses: actions/upload-artifact@v2
