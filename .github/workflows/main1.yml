@@ -1,12 +1,13 @@
 name: Web PrivPropRes(Inside)
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["Web PrivPropRes(Inside)3"]
+    types:
+      - completed
 
 jobs:
-  scrapeinside:
+  followupjob1:
     runs-on: ubuntu-latest
 
     steps:
