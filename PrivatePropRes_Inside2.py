@@ -239,7 +239,7 @@ async def main():
                 tasks = [process_id(list_id) for list_id in ids]
                 await asyncio.gather(*tasks)
 
-            await asyncio.gather(*(process_province(prov) for prov in range(2, 5)))
+            await asyncio.gather(*(process_province(prov) for prov in range(2, 4)))
             await process_ids()
             end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             print(f"Start Time: {start_time}")
