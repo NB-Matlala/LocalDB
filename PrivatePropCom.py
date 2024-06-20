@@ -792,5 +792,5 @@ async def main():
 
 
 
-# Running the main coroutine
+# Running the main
 asyncio.run(main())
