@@ -957,7 +957,7 @@ async def main2():
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             async def process_province2(prov):
-                response_text = await fetch(session2, f"https://www.privateproperty.co.za/for-sale/mpumalanga/{prov}", semaphore2)
+                response_text = await fetch2(session2, f"https://www.privateproperty.co.za/for-sale/mpumalanga/{prov}", semaphore2)
                 home_page = BeautifulSoup(response_text, 'html.parser')
 
                 links = []
@@ -971,7 +971,7 @@ async def main2():
                 new_links = []
                 for l in links:
                     try:
-                        res_in_text = await fetch(session2, f"{l}", semaphore2)
+                        res_in_text = await fetch2(session2, f"{l}", semaphore2)
                         inner = BeautifulSoup(res_in_text, 'html.parser')
                         ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
                         if ul2:
@@ -987,7 +987,7 @@ async def main2():
 
                 async def process_link(x):
                     try:
-                        x_response_text = await fetch(session2, x, semaphore2)
+                        x_response_text = await fetch2(session2, x, semaphore2)
                         x_page = BeautifulSoup(x_response_text, 'html.parser')
                         num_pages = getPages2(x_page, x)
 
@@ -996,7 +996,7 @@ async def main2():
                                 sleep_duration = random.randint(10, 15)
                                 await asyncio.sleep(sleep_duration)
 
-                            prop_page_text = await fetch(session2, f"{x}?page={s}", semaphore2)
+                            prop_page_text = await fetch2(session2, f"{x}?page={s}", semaphore2)
                             x_prop = BeautifulSoup(prop_page_text, 'html.parser')
                             prop_contain = x_prop.find_all('a', class_='listing-result')
                             for prop in prop_contain:
@@ -1019,7 +1019,7 @@ async def main2():
                         await asyncio.sleep(55)
                     list_url = f"https://www.privateproperty.co.za/for-sale/something/something/something/{list_id}"
                     try:
-                        listing = await fetch(session2, list_url, semaphore2)
+                        listing = await fetch2(session2, list_url, semaphore2)
                         list_page = BeautifulSoup(listing, 'html.parser')
                         data = extractor(list_page, list_url)
                         writer.writerow(data)
