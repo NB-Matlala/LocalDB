@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  scrapeinside:
+  scrapeinside2:
     runs-on: ubuntu-latest
 
     steps:
