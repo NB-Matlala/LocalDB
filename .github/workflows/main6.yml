@@ -1,4 +1,4 @@
-name: Web PrivPropRes(Inside)2
+name: Web PrivPropRes(Inside)4
 
 on:
   workflow_run:
@@ -7,7 +7,7 @@ on:
       - completed
 
 jobs:
-  followupjob2:
+  followupjob3:
     runs-on: ubuntu-latest
 
     steps:
