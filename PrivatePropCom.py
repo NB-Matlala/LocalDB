@@ -957,7 +957,7 @@ async def main2():
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             async def process_province2(prov):
-                response_text = await fetch2(session2, f"https://www.privateproperty.co.za/for-sale/mpumalanga/{prov}", semaphore2)
+                response_text = await fetch2(session2, f"https://www.privateproperty.co.za/commercial-sales/gauteng/{prov}", semaphore2)
                 home_page = BeautifulSoup(response_text, 'html.parser')
 
                 links = []
