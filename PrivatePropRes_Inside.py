@@ -108,7 +108,7 @@ def extractor(soup, url): # extracts from created urls
                 dining = feat.find('span',class_='property-features__value').text.strip()
             elif '#garages' in feat_icon:
                 garage = feat.find('span',class_='property-features__value').text.strip()
-            elif '#covered-parking' in feat_icon:
+            elif '#covered-parkiung' in feat_icon:
                 parking = feat.find('span',class_='property-features__value').text.strip()
             elif '#storeys' in feat_icon:
                 storeys = feat.find('span',class_='property-features__value').text.strip()
@@ -156,7 +156,7 @@ async def main():
     fieldnames = ['Listing ID', 'Erf Size', 'Property Type', 'Floor Size', 'Rates and taxes', 'Levies',
                   'Bedrooms', 'Bathrooms', 'Lounges', 'Dining', 'Garages', 'Covered Parking', 'Storeys',
                   'Agent Name', 'Agent Url', 'Time_stamp']
-    filename = "PrivatePropResInside.csv"
+    filename = "PrivatePropRes(Inside).csv"
     ids = []
     semaphore = asyncio.Semaphore(500)
 
