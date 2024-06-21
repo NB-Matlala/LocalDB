@@ -2,7 +2,7 @@ name: Web PrivPropCom
 
 on:
   workflow_run:
-    workflows: ["Web PrivPropRes(Inside)4"]
+    workflows: ["Web PrivPropRes"]
     types:
       - completed
 
