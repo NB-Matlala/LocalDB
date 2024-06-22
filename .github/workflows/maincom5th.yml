@@ -7,7 +7,7 @@ on:
       - completed
 
 jobs:
-  scrapecom:
+  followupjob5:
     runs-on: ubuntu-latest
 
     steps:
