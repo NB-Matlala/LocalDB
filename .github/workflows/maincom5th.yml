@@ -1,13 +1,12 @@
 name: Web PrivPropCom
 
 on:
-  workflow_run:
-    workflows: ["Web PrivPropRes(Inside)4"]
-    types:
-      - completed
+  schedule:
+    - cron: '39 12 * * *' # Runs at 00:30 CAT (UTC+2)
+
 
 jobs:
-  followupjob5:
+  Commercial:
     runs-on: ubuntu-latest
 
     steps:
