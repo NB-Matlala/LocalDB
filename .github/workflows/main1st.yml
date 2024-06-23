@@ -1,11 +1,8 @@
 name: Web PrivPropRes(Inside)3
 
 on:
-  push:
-    branches:
-      - main
   schedule:
-    - cron: '30 22 * * *' # Runs at 00:30 CAT (UTC+2)
+    - cron: '35 09 * * *' # Runs at 00:30 CAT (UTC+2)
 
 jobs:
   scrapeinside3:
