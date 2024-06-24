@@ -662,7 +662,7 @@ async def main():
 
 
         # Upload the CSV file to Azure Blob Storage
-        connection_string = "SharedAccessSignature=sv=2021-10-04&ss=btqf&srt=sco&st=2023-10-17T07%3A39%3A17Z&se=2030-10-18T07%3A39%3A00Z&sp=rwdxftlacup&sig=%2BTFZttmuMZLkl%2Bq%2Bf2t%2FPNBSJkWUzw52PPp1sL9X8Wk%3D;BlobEndpoint=https://stautotrader.blob.core.windows.net/;FileEndpoint=https://stautotrader.file.core.windows.net/;QueueEndpoint=https://stautotrader.queue.core.windows.net/;TableEndpoint=https://stautotrader.table.core.windows.net/;"
+        connection_string = "DefaultEndpointsProtocol=https;AccountName=privateproperty;AccountKey=zX/k04pby4o1V9av1a5U2E3fehg+1bo61C6cprAiPVnql+porseL1NVw6SlBBCnVaQKgxwfHjZyV+AStKg0N3A==;BlobEndpoint=https://privateproperty.blob.core.windows.net/;QueueEndpoint=https://privateproperty.queue.core.windows.net/;TableEndpoint=https://privateproperty.table.core.windows.net/;FileEndpoint=https://privateproperty.file.core.windows.net/;"
         container_name = "privateprop"
         blob_name = "PrivatePropRes.csv"
 
@@ -673,6 +673,9 @@ async def main():
             print(f"File uploaded to Azure Blob Storage: {blob_name}")
 
             
+
+        body = ''
+        requests.post('https://prod2-09.southafricanorth.logic.azure.com:443/workflows/623f55b4346742178048b209a003f895/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=PxhThWSLOC3sS3JAg54Z3uZEhTvU9zAbNIhkaAhMPN0', json=body)        
 
 
 
