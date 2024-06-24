@@ -946,7 +946,7 @@ async def main2():
     fieldnames2 = ['Listing ID', 'Erf Size', 'Property Type', 'Floor Size', 'Rates and taxes', 'Levies',
                   'Bedrooms', 'Bathrooms', 'Lounges', 'Dining', 'Garages', 'Covered Parking', 'Storeys',
                   'Agent Name', 'Agent Url', 'Time_stamp']
-    filename2 = "PrivatePropCom(Inside).csv"
+    filename2 = "PrivatePropRes(Inside)5.csv"
     ids = []
     semaphore2 = asyncio.Semaphore(500)
 
@@ -1037,7 +1037,7 @@ async def main2():
 
     connection_string = "SharedAccessSignature=sv=2021-10-04&ss=btqf&srt=sco&st=2023-10-17T07%3A39%3A17Z&se=2030-10-18T07%3A39%3A00Z&sp=rwdxftlacup&sig=%2BTFZttmuMZLkl%2Bq%2Bf2t%2FPNBSJkWUzw52PPp1sL9X8Wk%3D;BlobEndpoint=https://stautotrader.blob.core.windows.net/;FileEndpoint=https://stautotrader.file.core.windows.net/;QueueEndpoint=https://stautotrader.queue.core.windows.net/;TableEndpoint=https://stautotrader.table.core.windows.net/;"
     container_name = "privateprop"
-    blob_name = "PrivatePropCom(Inside).csv"
+    blob_name = "PrivatePropRes(Inside)5.csv"
 
     blob_client = BlobClient.from_connection_string(connection_string, container_name, blob_name)
 
