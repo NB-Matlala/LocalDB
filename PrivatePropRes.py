@@ -1,3 +1,4 @@
+import requests
 import aiohttp
 import asyncio
 import re
