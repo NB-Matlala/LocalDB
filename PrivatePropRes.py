@@ -553,8 +553,8 @@ async def main():
                         num_pages = getPages(x_page, x)
 
                         for s in range(1, num_pages + 1):
-                            if s % 10 == 0:
-                                sleep_duration = random.randint(10, 15)
+                            if s % 25 == 0:
+                                sleep_duration = random.randint(40, 60)
                                 await asyncio.sleep(sleep_duration)
 
                             prop_page_text = await fetch(session, f"{x}&page={s}")
@@ -574,8 +574,8 @@ async def main():
                         num_pages = getPages(x_page, x)
 
                         for s in range(1, num_pages + 1):
-                            if s % 10 == 0:
-                                sleep_duration = random.randint(10, 15)
+                            if s % 25 == 0:
+                                sleep_duration = random.randint(40, 60)
                                 await asyncio.sleep(sleep_duration)
 
                             prop_page_text = await fetch(session, f"{x}&page={s}")
@@ -595,8 +595,8 @@ async def main():
                         num_pages = getPages(x_page, x)
 
                         for s in range(1, num_pages + 1):
-                            if s % 10 == 0:
-                                sleep_duration = random.randint(10, 15)
+                            if s % 25 == 0:
+                                sleep_duration = random.randint(40, 60)
                                 await asyncio.sleep(sleep_duration)
 
                             prop_page_text = await fetch(session, f"{x}&page={s}")
@@ -616,8 +616,8 @@ async def main():
                         num_pages = getPages(x_page, x)
 
                         for s in range(1, num_pages + 1):
-                            if s % 10 == 0:
-                                sleep_duration = random.randint(10, 15)
+                            if s % 25 == 0:
+                                sleep_duration = random.randint(40, 60)
                                 await asyncio.sleep(sleep_duration)
 
                             prop_page_text = await fetch(session, f"{x}&page={s}")
@@ -637,8 +637,8 @@ async def main():
                         num_pages = getPages(x_page, x)
 
                         for s in range(1, num_pages + 1):
-                            if s % 10 == 0:
-                                sleep_duration = random.randint(10, 15)
+                            if s % 25 == 0:
+                                sleep_duration = random.randint(40, 60)
                                 await asyncio.sleep(sleep_duration)
 
                             prop_page_text = await fetch(session, f"{x}&page={s}")
