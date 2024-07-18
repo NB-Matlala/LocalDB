@@ -510,7 +510,7 @@ async def main():
     fieldnames = ['Listing ID', 'Title', 'Property Type', 'Price', 'Street', 'Region', 'Locality','Bedrooms', 'Bathrooms', 'Floor Size', 'Garages', 'URL',
                   'Agent Name', 'Agent Url', 'Time_stamp']
     filename = "PrivatePropRes.csv"
-    semaphore = asyncio.Semaphore(650)
+    semaphore = asyncio.Semaphore(500)
 
     async with aiohttp.ClientSession() as session:
         with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
