@@ -10,9 +10,10 @@ import math
 from datetime import datetime
 from azure.storage.blob import BlobClient
 
-async def fetch(session, url):
-    async with session.get(url) as response:
-        return await response.text()
+async def fetch(session, url, semaphore):
+    async with semaphore:
+        async with session.get(url) as response:
+            return await response.text()
 
 ######################################Functions##########################################################
 
@@ -509,6 +510,7 @@ async def main():
     fieldnames = ['Listing ID', 'Title', 'Property Type', 'Price', 'Street', 'Region', 'Locality','Bedrooms', 'Bathrooms', 'Floor Size', 'Garages', 'URL',
                   'Agent Name', 'Agent Url', 'Time_stamp']
     filename = "PrivatePropRes.csv"
+    semaphore = asyncio.Semaphore(650)
 
     async with aiohttp.ClientSession() as session:
         with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
@@ -517,7 +519,7 @@ async def main():
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             async def process_province(prov):
-                response_text = await fetch(session, f"https://www.privateproperty.co.za/for-sale/mpumalanga/{prov}")
+                response_text = await fetch(session, f"https://www.privateproperty.co.za/for-sale/mpumalanga/{prov}", semaphore)
                 home_page = BeautifulSoup(response_text, 'html.parser')
 
                 links = []
@@ -531,7 +533,7 @@ async def main():
                 new_links = []
                 for l in links:
                     try:
-                        res_in_text = await fetch(session, f"{l}")
+                        res_in_text = await fetch(session, f"{l}", semaphore)
                         inner = BeautifulSoup(res_in_text, 'html.parser')
                         ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
                         if ul2:
@@ -548,7 +550,7 @@ async def main():
                 async def process_link10(x):
                     try:
                         x = f"{x}?pt=10"
-                        x_response_text = await fetch(session, x)
+                        x_response_text = await fetch(session, x, semaphore)
                         x_page = BeautifulSoup(x_response_text, 'html.parser')
                         num_pages = getPages(x_page, x)
 
@@ -557,7 +559,7 @@ async def main():
                                 sleep_duration = random.randint(40, 60)
                                 await asyncio.sleep(sleep_duration)
 
-                            prop_page_text = await fetch(session, f"{x}&page={s}")
+                            prop_page_text = await fetch(session, f"{x}&page={s}", semaphore)
                             x_prop = BeautifulSoup(prop_page_text, 'html.parser')
                             prop_contain = x_prop.find_all('a', class_='listing-result')
                             for prop in prop_contain:
@@ -569,16 +571,16 @@ async def main():
                 async def process_link5(x):
                     try:
                         x = f"{x}?pt=5"
-                        x_response_text = await fetch(session, x)
+                        x_response_text = await fetch(session, x, semaphore)
                         x_page = BeautifulSoup(x_response_text, 'html.parser')
                         num_pages = getPages(x_page, x)
 
                         for s in range(1, num_pages + 1):
                             if s % 25 == 0:
-                                sleep_duration = random.randint(40, 60)
+                                sleep_duration = random.randint(50, 60)
                                 await asyncio.sleep(sleep_duration)
 
-                            prop_page_text = await fetch(session, f"{x}&page={s}")
+                            prop_page_text = await fetch(session, f"{x}&page={s}", semaphore)
                             x_prop = BeautifulSoup(prop_page_text, 'html.parser')
                             prop_contain = x_prop.find_all('a', class_='listing-result')
                             for prop in prop_contain:
@@ -590,7 +592,7 @@ async def main():
                 async def process_link2(x):
                     try:
                         x = f"{x}?pt=2"
-                        x_response_text = await fetch(session, x)
+                        x_response_text = await fetch(session, x, semaphore)
                         x_page = BeautifulSoup(x_response_text, 'html.parser')
                         num_pages = getPages(x_page, x)
 
@@ -599,7 +601,7 @@ async def main():
                                 sleep_duration = random.randint(40, 60)
                                 await asyncio.sleep(sleep_duration)
 
-                            prop_page_text = await fetch(session, f"{x}&page={s}")
+                            prop_page_text = await fetch(session, f"{x}&page={s}", semaphore)
                             x_prop = BeautifulSoup(prop_page_text, 'html.parser')
                             prop_contain = x_prop.find_all('a', class_='listing-result')
                             for prop in prop_contain:
@@ -611,7 +613,7 @@ async def main():
                 async def process_link7(x):
                     try:
                         x = f"{x}?pt=7"
-                        x_response_text = await fetch(session, x)
+                        x_response_text = await fetch(session, x, semaphore)
                         x_page = BeautifulSoup(x_response_text, 'html.parser')
                         num_pages = getPages(x_page, x)
 
@@ -620,7 +622,7 @@ async def main():
                                 sleep_duration = random.randint(40, 60)
                                 await asyncio.sleep(sleep_duration)
 
-                            prop_page_text = await fetch(session, f"{x}&page={s}")
+                            prop_page_text = await fetch(session, f"{x}&page={s}", semaphore)
                             x_prop = BeautifulSoup(prop_page_text, 'html.parser')
                             prop_contain = x_prop.find_all('a', class_='listing-result')
                             for prop in prop_contain:
@@ -632,7 +634,7 @@ async def main():
                 async def process_link1(x):
                     try:
                         x = f"{x}?pt=1"
-                        x_response_text = await fetch(session, x)
+                        x_response_text = await fetch(session, x, semaphore)
                         x_page = BeautifulSoup(x_response_text, 'html.parser')
                         num_pages = getPages(x_page, x)
 
@@ -641,7 +643,7 @@ async def main():
                                 sleep_duration = random.randint(40, 60)
                                 await asyncio.sleep(sleep_duration)
 
-                            prop_page_text = await fetch(session, f"{x}&page={s}")
+                            prop_page_text = await fetch(session, f"{x}&page={s}", semaphore)
                             x_prop = BeautifulSoup(prop_page_text, 'html.parser')
                             prop_contain = x_prop.find_all('a', class_='listing-result')
                             for prop in prop_contain:
