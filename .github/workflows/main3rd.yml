@@ -1,11 +1,5 @@
 name: Web PrivPropRes(Inside)2
 
-on:
-  workflow_run:
-    workflows: ["Web PrivPropRes(Inside)"]
-    types:
-      - completed
-
 jobs:
   followupjob2:
     runs-on: ubuntu-latest
