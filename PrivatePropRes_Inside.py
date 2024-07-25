@@ -143,11 +143,6 @@ def extractor(soup, url): # extracts from created urls
         agent_name = None
         agent_url = None
 
-    try:
-        comment_div = soup.find('div', class_='listing-description__text')
-        prop_desc = comment_div.text.strip()
-    except:
-        prop_desc = None
 
     current_datetime = datetime.now().strftime('%Y-%m-%d')
 
@@ -155,13 +150,13 @@ def extractor(soup, url): # extracts from created urls
         "Listing ID": prop_ID, "Erf Size": erfSize, "Property Type": prop_type, "Floor Size": floor_size,
         "Rates and taxes": rates, "Levies": levy, "Bedrooms": beds, "Bathrooms": baths, "Lounges": lounge,
         "Dining": dining, "Garages": garage, "Covered Parking": parking, "Storeys": storeys, "Agent Name": agent_name,
-        "Agent Url": agent_url, "Time_stamp": current_datetime, "Description": prop_desc}
+        "Agent Url": agent_url, "Time_stamp": current_datetime}
 
 ######################################Functions##########################################################
 async def main():
     fieldnames = ['Listing ID', 'Erf Size', 'Property Type', 'Floor Size', 'Rates and taxes', 'Levies',
                   'Bedrooms', 'Bathrooms', 'Lounges', 'Dining', 'Garages', 'Covered Parking', 'Storeys',
-                  'Agent Name', 'Agent Url', 'Time_stamp', 'Description']
+                  'Agent Name', 'Agent Url', 'Time_stamp']
     filename = "PrivatePropRes(Inside).csv"
     ids = []
     semaphore = asyncio.Semaphore(500)
