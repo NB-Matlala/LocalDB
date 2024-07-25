@@ -10,10 +10,12 @@ import time
 from datetime import datetime 
 
 session = HTMLSession()
-base_url = "https://www.property24.com/for-sale/uvongo/margate/kwazulu-natal/6359/{id}"
+
+def get_text_or_none(element):
+    return element.get_text(strip=True) if element else None
 
 def extract_property_details(listing_id):
-    url = listing_id
+    url = "https://www.property24.com/for-sale/eldo-village-estate/centurion/gauteng/33086/114700066"
     try:
         response = session.get(url)
         if response.status != 200:
