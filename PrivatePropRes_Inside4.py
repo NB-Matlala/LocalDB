@@ -224,7 +224,7 @@ async def main():
                 async def process_id(list_id):
                     nonlocal count
                     count += 1
-                    if count % 1000 == 0:
+                    if count % 800 == 0:
                         print(f"Processed {count} IDs, sleeping for 20 seconds...")
                         await asyncio.sleep(55)
                     list_url = f"https://www.privateproperty.co.za/for-sale/something/something/something/{list_id}"
