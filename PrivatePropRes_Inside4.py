@@ -158,7 +158,7 @@ async def main():
                   'Agent Name', 'Agent Url', 'Time_stamp']
     filename = "PrivatePropRes(Inside)4.csv"
     ids = []
-    semaphore = asyncio.Semaphore(500)
+    semaphore = asyncio.Semaphore(300)
 
     async with aiohttp.ClientSession() as session:
         with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
@@ -202,8 +202,8 @@ async def main():
                         num_pages = getPages(x_page, x)
 
                         for s in range(1, num_pages + 1):
-                            if s % 10 == 0:
-                                sleep_duration = random.randint(10, 15)
+                            if s % 100 == 0:
+                                sleep_duration = random.randint(30, 45)
                                 await asyncio.sleep(sleep_duration)
 
                             prop_page_text = await fetch(session, f"{x}?page={s}", semaphore)
