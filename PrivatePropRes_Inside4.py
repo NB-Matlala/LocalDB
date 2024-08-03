@@ -1,5 +1,4 @@
-import aiohttp
-import asyncio
+import requests
 import re
 from bs4 import BeautifulSoup
 import json
@@ -8,11 +7,8 @@ import csv
 import math
 from datetime import datetime
 from azure.storage.blob import BlobClient
-
-async def fetch(session, url, semaphore):
-    async with semaphore:
-        async with session.get(url) as response:
-            return await response.text()
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
 
 ######################################Functions##########################################################
 def getPages(soupPage, url):
@@ -41,7 +37,7 @@ def getIds(soup):
 
     return prop_ID
 
-def extractor(soup, url): # extracts from created urls
+def extractor(soup, url):
     try:
         prop_ID = None
         erfSize = None
@@ -151,23 +147,34 @@ def extractor(soup, url): # extracts from created urls
         "Dining": dining, "Garages": garage, "Covered Parking": parking, "Storeys": storeys, "Agent Name": agent_name,
         "Agent Url": agent_url, "Time_stamp": current_datetime}
 
+def fetch(url, session):
+    try:
+        response = session.get(url)
+        response.raise_for_status()
+        return response.text
+    except requests.RequestException as e:
+        print(f"Request failed for {url}: {e}")
+        return None
+
 ######################################Functions##########################################################
-async def main():
+def main():
     fieldnames = ['Listing ID', 'Erf Size', 'Property Type', 'Floor Size', 'Rates and taxes', 'Levies',
                   'Bedrooms', 'Bathrooms', 'Lounges', 'Dining', 'Garages', 'Covered Parking', 'Storeys',
                   'Agent Name', 'Agent Url', 'Time_stamp']
     filename = "PrivatePropRes(Inside)4.csv"
     ids = []
-    semaphore = asyncio.Semaphore(300)
+    max_workers = 10
 
-    async with aiohttp.ClientSession() as session:
+    with requests.Session() as session:
         with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-            async def process_province(prov):
-                response_text = await fetch(session, f"https://www.privateproperty.co.za/for-sale/mpumalanga/{prov}", semaphore)
+            def process_province(prov):
+                response_text = fetch(f"https://www.privateproperty.co.za/for-sale/mpumalanga/{prov}", session)
+                if response_text is None:
+                    return
                 home_page = BeautifulSoup(response_text, 'html.parser')
 
                 links = []
@@ -181,7 +188,9 @@ async def main():
                 new_links = []
                 for l in links:
                     try:
-                        res_in_text = await fetch(session, f"{l}", semaphore)
+                        res_in_text = fetch(f"{l}", session)
+                        if res_in_text is None:
+                            continue
                         inner = BeautifulSoup(res_in_text, 'html.parser')
                         ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
                         if ul2:
@@ -192,69 +201,64 @@ async def main():
                                 new_links.append(link2)
                         else:
                             new_links.append(l)
-                    except aiohttp.ClientError as e:
+                    except requests.RequestException as e:
                         print(f"Request failed for {l}: {e}")
 
-                async def process_link(x):
+                def process_link(x):
                     try:
-                        x_response_text = await fetch(session, x, semaphore)
+                        x_response_text = fetch(x, session)
+                        if x_response_text is None:
+                            return
                         x_page = BeautifulSoup(x_response_text, 'html.parser')
                         num_pages = getPages(x_page, x)
 
                         for s in range(1, num_pages + 1):
                             if s % 100 == 0:
                                 sleep_duration = random.randint(30, 45)
-                                await asyncio.sleep(sleep_duration)
+                                time.sleep(sleep_duration)
 
-                            prop_page_text = await fetch(session, f"{x}?page={s}", semaphore)
+                            prop_page_text = fetch(f"{x}?page={s}", session)
+                            if prop_page_text is None:
+                                continue
                             x_prop = BeautifulSoup(prop_page_text, 'html.parser')
-                            prop_contain = x_prop.find_all('a', class_='listing-result')
-                            for prop in prop_contain:
-                                data = getIds(prop)
-                                ids.append(data)
-                    except Exception as e:
-                        print(f"An error occurred while processing link {x}: {e}")
 
-                tasks = [process_link(x) for x in new_links]
-                await asyncio.gather(*tasks)
+                            props = x_prop.find_all('div', class_='search-result')
+                            for prop in props:
+                                prop_ID = getIds(prop)
+                                if prop_ID not in ids:
+                                    ids.append(prop_ID)
+                                    prop_url = f"https://www.privateproperty.co.za/for-sale/property/{prop_ID}"
+                                    prop_response_text = fetch(prop_url, session)
+                                    if prop_response_text is None:
+                                        continue
+                                    soupProp = BeautifulSoup(prop_response_text, 'html.parser')
+                                    prop_dict = extractor(soupProp, prop_url)
+                                    writer.writerow(prop_dict)
+                                    print(f"{prop_ID} written")
+                    except requests.RequestException as e:
+                        print(f"Request failed for {x}: {e}")
 
-            async def process_ids():
-                count = 0
+                with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    futures = [executor.submit(process_link, x) for x in new_links]
+                    for future in as_completed(futures):
+                        future.result()
 
-                async def process_id(list_id):
-                    nonlocal count
-                    count += 1
-                    if count % 800 == 0:
-                        print(f"Processed {count} IDs, sleeping for 20 seconds...")
-                        await asyncio.sleep(55)
-                    list_url = f"https://www.privateproperty.co.za/for-sale/something/something/something/{list_id}"
-                    try:
-                        listing = await fetch(session, list_url, semaphore)
-                        list_page = BeautifulSoup(listing, 'html.parser')
-                        data = extractor(list_page, list_url)
-                        writer.writerow(data)
-                    except Exception as e:
-                        print(f"An error occurred while processing ID {list_id}: {e}")
+            provinces = ["3"]
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = [executor.submit(process_province, prov) for prov in provinces]
+                for future in as_completed(futures):
+                    future.result()
 
-                tasks = [process_id(list_id) for list_id in ids]
-                await asyncio.gather(*tasks)
-
-            await asyncio.gather(*(process_province(prov) for prov in range(3, 4)))
-            await process_ids()
-            end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             print(f"Start Time: {start_time}")
-            print(f"End Time: {end_time}")
+            print(f"End Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-    connection_string = "DefaultEndpointsProtocol=https;AccountName=privateproperty;AccountKey=zX/k04pby4o1V9av1a5U2E3fehg+1bo61C6cprAiPVnql+porseL1NVw6SlBBCnVaQKgxwfHjZyV+AStKg0N3A==;BlobEndpoint=https://privateproperty.blob.core.windows.net/;QueueEndpoint=https://privateproperty.queue.core.windows.net/;TableEndpoint=https://privateproperty.table.core.windows.net/;FileEndpoint=https://privateproperty.file.core.windows.net/;"
-    container_name = "privateprop"
-    blob_name = "PrivatePropRes(Inside)4.csv"
+    blob = BlobClient.from_connection_string(
+        "DefaultEndpointsProtocol=https;AccountName=privateproperty;AccountKey=zX/k04pby4o1V9av1a5U2E3fehg+1bo61C6cprAiPVnql+porseL1NVw6SlBBCnVaQKgxwfHjZyV+AStKg0N3A==;BlobEndpoint=https://privateproperty.blob.core.windows.net/;QueueEndpoint=https://privateproperty.queue.core.windows.net/;TableEndpoint=https://privateproperty.table.core.windows.net/;FileEndpoint=https://privateproperty.file.core.windows.net/;",
+        container_name="privateprop",
+        blob_name="PrivatePropRes(Inside)6.csv")
 
-    blob_client = BlobClient.from_connection_string(connection_string, container_name, blob_name)
-    
     with open(filename, "rb") as data:
-        blob_client.upload_blob(data, overwrite=True)
-        print(f"File uploaded to Azure Blob Storage: {blob_name}")
+        blob.upload_blob(data, overwrite=True)
 
-# Running the main coroutine
-asyncio.run(main())
-
+if __name__ == "__main__":
+    main()
