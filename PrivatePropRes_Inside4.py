@@ -156,9 +156,9 @@ async def main():
     fieldnames = ['Listing ID', 'Erf Size', 'Property Type', 'Floor Size', 'Rates and taxes', 'Levies',
                   'Bedrooms', 'Bathrooms', 'Lounges', 'Dining', 'Garages', 'Covered Parking', 'Storeys',
                   'Agent Name', 'Agent Url', 'Time_stamp']
-    filename = "PrivatePropRes(Inside)4.csv"
+    filename = "PrivatePropRes(Inside)0.csv"
     ids = []
-    semaphore = asyncio.Semaphore(500)
+    semaphore = asyncio.Semaphore(1000)
 
     async with aiohttp.ClientSession() as session:
         with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
@@ -202,44 +202,59 @@ async def main():
                         num_pages = getPages(x_page, x)
 
                         for s in range(1, num_pages + 1):
-                            if s % 10 == 0:
-                                sleep_duration = random.randint(10, 15)
+                            if s % 100 == 0:
+                                sleep_duration = random.randint(30, 45)
                                 await asyncio.sleep(sleep_duration)
 
                             prop_page_text = await fetch(session, f"{x}?page={s}", semaphore)
                             x_prop = BeautifulSoup(prop_page_text, 'html.parser')
-                            prop_contain = x_prop.find_all('a', class_='listing-result')
+                            prop_contain = x_prop.find_all('a', class_='listingResult')
+                            if not prop_contain:
+                                break
+
+
                             for prop in prop_contain:
-                                data = getIds(prop)
-                                ids.append(data)
-                    except Exception as e:
+                                prop_url = f"https://www.privateproperty.co.za{prop.get('href')}"
+                                ids.append(prop_url)
+
+                    except aiohttp.ClientError as e:
                         print(f"Request failed for {x}: {e}")
 
                 await asyncio.gather(*[process_link(x) for x in new_links])
 
-            prov_links = range(3, 3)
+            prov_links = ["3"]
+
             await asyncio.gather(*[process_province(prov) for prov in prov_links])
 
-            async def process_property(prop_id):
+            async def process_url(i):
                 try:
-                    prop_url = f"https://www.privateproperty.co.za/for-sale/property/{prop_id}"
-                    prop_response_text = await fetch(session, prop_url, semaphore)
-                    soupex = BeautifulSoup(prop_response_text, 'html.parser')
-                    comments = extractor(soupex, prop_url)
-                    writer.writerow(comments)
-                except Exception as e:
-                    print(f"Request failed for property {prop_id}: {e}")
+                    i_response_text = await fetch(session, i, semaphore)
+                    i_prop = BeautifulSoup(i_response_text, 'html.parser')
+                    extracted_data = extractor(i_prop, i)
+                    writer.writerow(extracted_data)
+                except aiohttp.ClientError as e:
+                    print(f"Request failed for {i}: {e}")
 
-            await asyncio.gather(*[process_property(prop_id) for prop_id in ids])
+            await asyncio.gather(*[process_url(i) for i in ids])
 
-            end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            blob = BlobClient.from_connection_string(
-                "DefaultEndpointsProtocol=https;AccountName=privateproperty;AccountKey=zX/k04pby4o1V9av1a5U2E3fehg+1bo61C6cprAiPVnql+porseL1NVw6SlBBCnVaQKgxwfHjZyV+AStKg0N3A==;BlobEndpoint=https://privateproperty.blob.core.windows.net/;QueueEndpoint=https://privateproperty.queue.core.windows.net/;TableEndpoint=https://privateproperty.table.core.windows.net/;FileEndpoint=https://privateproperty.file.core.windows.net/;",
-                container_name="privateprop", blob_name="PrivatePropRes(Inside)4.csv")
+            # Upload CSV to Azure Blob Storage
+            blob = BlobClient.from_connection_string("DefaultEndpointsProtocol=https;AccountName=privateproperty;AccountKey=zX/k04pby4o1V9av1a5U2E3fehg+1bo61C6cprAiPVnql+porseL1NVw6SlBBCnVaQKgxwfHjZyV+AStKg0N3A==;BlobEndpoint=https://privateproperty.blob.core.windows.net/;QueueEndpoint=https://privateproperty.queue.core.windows.net/;TableEndpoint=https://privateproperty.table.core.windows.net/;FileEndpoint=https://privateproperty.file.core.windows.net/;",
+                                                     container_name="privateprop",
+                                                     blob_name=filename)
             with open(filename, "rb") as data:
                 blob.upload_blob(data, overwrite=True)
 
-            print(f"Scraping started at {start_time} and finished at {end_time}")
+            print(f"Start Time: {start_time}")
+            print(f"End Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            print(f"Total Properties Scraped: {len(ids)}")
+            print(f"Data uploaded to Azure Blob Storage: {filename}")
 
-if __name__ == '__main__':
-    asyncio.run(main())
+# Define the timeout (2 hours = 7200 seconds)
+TIMEOUT = 7600
+
+# Run the main function with the timeout
+try:
+    asyncio.run(asyncio.wait_for(main(), timeout=TIMEOUT))
+except asyncio.TimeoutError:
+    print("Script timed out after 2 hours.")
+
