@@ -1,10 +1,13 @@
 name: Web PrivPropRes(Inside)4
 
 on:
-  workflow_run:
-    workflows: ["Web PrivPropRes(Inside)2"]
-    types:
-      - completed
+  push:
+    branches:
+      - main
+  # workflow_run:
+  #   workflows: ["Web PrivPropRes(Inside)2"]
+  #   types:
+  #     - completed
 
 jobs:
   followupjob3:
@@ -33,8 +36,3 @@ jobs:
         run: |
           python PrivatePropRes_Inside4.py 
 
-      - name: Archive CSV file
-        uses: actions/upload-artifact@v2
-        with:
-          name: PrivatePropRes(Inside)4.csv
-          path: PrivatePropRes(Inside)4.csv
