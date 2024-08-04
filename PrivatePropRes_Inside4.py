@@ -156,7 +156,7 @@ async def main():
     fieldnames = ['Listing ID', 'Erf Size', 'Property Type', 'Floor Size', 'Rates and taxes', 'Levies',
                   'Bedrooms', 'Bathrooms', 'Lounges', 'Dining', 'Garages', 'Covered Parking', 'Storeys',
                   'Agent Name', 'Agent Url', 'Time_stamp']
-    filename = "PrivatePropRes(Inside)2.csv"
+    filename = "PrivatePropRes(Inside)4.csv"
     ids = []
     semaphore = asyncio.Semaphore(500)
 
@@ -235,7 +235,7 @@ async def main():
             end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             blob = BlobClient.from_connection_string(
                 "DefaultEndpointsProtocol=https;AccountName=privateproperty;AccountKey=zX/k04pby4o1V9av1a5U2E3fehg+1bo61C6cprAiPVnql+porseL1NVw6SlBBCnVaQKgxwfHjZyV+AStKg0N3A==;BlobEndpoint=https://privateproperty.blob.core.windows.net/;QueueEndpoint=https://privateproperty.queue.core.windows.net/;TableEndpoint=https://privateproperty.table.core.windows.net/;FileEndpoint=https://privateproperty.file.core.windows.net/;",
-                container_name="privateprop", blob_name="PrivatePropRes(Inside)2.csv")
+                container_name="privateprop", blob_name="PrivatePropRes(Inside)4.csv")
             with open(filename, "rb") as data:
                 blob.upload_blob(data, overwrite=True)
 
