@@ -1,17 +1,18 @@
-name: Web PrivPropRes(Inside)4
+name: Web PrivPropRes(Inside)4_1
 
 on:
-  push:
-    branches:
-      - main
-  # workflow_run:
-  #   workflows: ["Web PrivPropRes(Inside)2"]
-  #   types:
-  #     - completed
+  # push:
+  #   branches:
+  #     - main
+  workflow_run:
+    workflows: ["Web PrivPropRes(Inside)2"]
+    types:
+      - completed
 
 jobs:
   followupjob3:
     runs-on: ubuntu-latest
+    concurrency: multirunP1
 
     steps:
       - name: Checkout code
@@ -34,5 +35,5 @@ jobs:
 
       - name: Run web scraping
         run: |
-          python PrivatePropRes_Inside4.py 
+          python PrivatePropRes_Inside4_1.py
 
