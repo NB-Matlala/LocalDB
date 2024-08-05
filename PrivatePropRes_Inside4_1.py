@@ -157,9 +157,9 @@ async def main():
     fieldnames = ['Listing ID', 'Erf Size', 'Property Type', 'Floor Size', 'Rates and taxes', 'Levies',
                   'Bedrooms', 'Bathrooms', 'Lounges', 'Dining', 'Garages', 'Covered Parking', 'Storeys',
                   'Agent Name', 'Agent Url', 'Time_stamp']
-    filename = "PrivatePropRes(Inside)0.csv"
+    filename = "PrivatePropRes(Inside)01.csv"
     ids = []
-    semaphore = asyncio.Semaphore(100)
+    semaphore = asyncio.Semaphore(500)
 
     async with aiohttp.ClientSession() as session:
         with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
@@ -168,33 +168,24 @@ async def main():
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             async def process_province(prov):
-                response_text = await fetch(session, f"https://www.privateproperty.co.za/for-sale/mpumalanga/{prov}", semaphore)
+                response_text = await fetch(session, prov, semaphore)
                 home_page = BeautifulSoup(response_text, 'html.parser')
-
-                links = []
-                ul = home_page.find('ul', class_='region-content-holder__unordered-list')
-                li_items = ul.find_all('li')
-                for area in li_items:
-                    link = area.find('a')
-                    link = f"https://www.privateproperty.co.za{link.get('href')}"
-                    links.append(link)
-
                 new_links = []
-                for l in links:
-                    try:
-                        res_in_text = await fetch(session, f"{l}", semaphore)
-                        inner = BeautifulSoup(res_in_text, 'html.parser')
-                        ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
-                        if ul2:
-                            li_items2 = ul2.find_all('li', class_='region-content-holder__list')
-                            for area2 in li_items2:
-                                link2 = area2.find('a')
-                                link2 = f"https://www.privateproperty.co.za{link2.get('href')}"
-                                new_links.append(link2)
-                        else:
-                            new_links.append(l)
-                    except aiohttp.ClientError as e:
-                        print(f"Request failed for {l}: {e}")
+                try:
+                    inner = home_page
+                    ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
+                    if ul2:
+                        li_items2 = ul2.find_all('li', class_='region-content-holder__list')
+                        for area2 in li_items2:
+                            link2 = area2.find('a')
+                            link2 = f"https://www.privateproperty.co.za{link2.get('href')}"
+                            new_links.append(link2)
+                    else:
+                        new_links.append(prov)
+
+                except aiohttp.ClientError as e:
+                    print(f"Request failed for {prov}: {e}")
+
 
                 async def process_link(x):
                     try:
@@ -204,7 +195,7 @@ async def main():
 
                         for s in range(1, num_pages + 1):
                             if s % 10 == 0:
-                                sleep_duration = random.randint(30, 45)
+                                sleep_duration = random.randint(10, 20)
                                 await asyncio.sleep(sleep_duration)
 
                             prop_page_text = await fetch(session, f"{x}?page={s}", semaphore)
@@ -227,20 +218,26 @@ async def main():
                     count += 1
                     if count % 1000 == 0:
                         print(f"Processed {count} IDs, sleeping for 20 seconds...")
-                        await asyncio.sleep(55)
+                        await asyncio.sleep(35)
                     list_url = f"https://www.privateproperty.co.za/for-sale/something/something/something/{list_id}"
+
                     try:
+                        url_time = datetime.now().strftime("%H:%M:%S")
                         listing = await fetch(session, list_url, semaphore)
                         list_page = BeautifulSoup(listing, 'html.parser')
                         data = extractor(list_page, list_url)
                         writer.writerow(data)
+                        url_extract_time = datetime.now().strftime("%H:%M:%S")
+                        print(f"Found:{url_time}, Extracted by: {url_extract_time}")
                     except Exception as e:
                         print(f"An error occurred while processing ID {list_id}: {e}")
 
                 tasks = [process_id(list_id) for list_id in ids]
                 await asyncio.gather(*tasks)
 
-            await asyncio.gather(*(process_province(prov) for prov in range(3, 4)))
+            gp_links = ['https://www.privateproperty.co.za/for-sale/gauteng/johannesburg/33',
+                        'https://www.privateproperty.co.za/for-sale/gauteng/midrand/24']
+            await asyncio.gather(*(process_province(prov) for prov in gp_links))
             await process_ids()
             end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             print(f"Start Time: {start_time}")
@@ -248,7 +245,7 @@ async def main():
 
     connection_string = "DefaultEndpointsProtocol=https;AccountName=privateproperty;AccountKey=zX/k04pby4o1V9av1a5U2E3fehg+1bo61C6cprAiPVnql+porseL1NVw6SlBBCnVaQKgxwfHjZyV+AStKg0N3A==;BlobEndpoint=https://privateproperty.blob.core.windows.net/;QueueEndpoint=https://privateproperty.queue.core.windows.net/;TableEndpoint=https://privateproperty.table.core.windows.net/;FileEndpoint=https://privateproperty.file.core.windows.net/;"
     container_name = "privateprop"
-    blob_name = "PrivatePropRes(Inside)0.csv"
+    blob_name = "PrivatePropRes(Inside)01.csv"
 
     blob_client = BlobClient.from_connection_string(connection_string, container_name, blob_name)
 
@@ -258,3 +255,4 @@ async def main():
 
 # Running the main coroutine
 asyncio.run(main())
+
