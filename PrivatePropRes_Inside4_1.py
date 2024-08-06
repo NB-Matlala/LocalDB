@@ -222,13 +222,10 @@ async def main():
                     list_url = f"https://www.privateproperty.co.za/for-sale/something/something/something/{list_id}"
 
                     try:
-                        url_time = datetime.now().strftime("%H:%M:%S")
                         listing = await fetch(session, list_url, semaphore)
                         list_page = BeautifulSoup(listing, 'html.parser')
                         data = extractor(list_page, list_url)
                         writer.writerow(data)
-                        url_extract_time = datetime.now().strftime("%H:%M:%S")
-                        print(f"Found:{url_time}, Extracted by: {url_extract_time}")
                     except Exception as e:
                         print(f"An error occurred while processing ID {list_id}: {e}")
 
