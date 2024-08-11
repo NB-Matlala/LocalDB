@@ -1,8 +1,11 @@
 name: Web PrivPropCom
 
 on:
-  schedule:
-    - cron: '35 00 * * *' # Runs at 00:30 CAT (UTC+2)
+  push:
+    branches:
+      - main
+  # schedule:
+  #   - cron: '35 00 * * *' # Runs at 00:30 CAT (UTC+2)
 
 
 jobs:
@@ -31,9 +34,3 @@ jobs:
       - name: Run web scraping
         run: |
           python PrivatePropCom.py 
-
-      - name: Archive CSV file
-        uses: actions/upload-artifact@v2
-        with:
-          name: PrivatePropCom.csv
-          path: PrivatePropCom.csv
