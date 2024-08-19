@@ -1,5 +1,4 @@
-import aiohttp
-import asyncio
+import requests
 import re
 from bs4 import BeautifulSoup
 import json
@@ -7,12 +6,13 @@ import random
 import csv
 import math
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from azure.storage.blob import BlobClient
 
-async def fetch(session, url, semaphore):
-    async with semaphore:
-        async with session.get(url) as response:
-            return await response.text()
+def fetch(url, session, semaphore):
+    with semaphore:
+        response = session.get(url)
+        return response.text
 
 ######################################Functions##########################################################
 def getPages(soupPage, url):
@@ -152,22 +152,22 @@ def extractor(soup, url): # extracts from created urls
         "Agent Url": agent_url, "Time_stamp": current_datetime}
 
 ######################################Functions##########################################################
-async def main():
+def main():
     fieldnames = ['Listing ID', 'Erf Size', 'Property Type', 'Floor Size', 'Rates and taxes', 'Levies',
                   'Bedrooms', 'Bathrooms', 'Lounges', 'Dining', 'Garages', 'Covered Parking', 'Storeys',
                   'Agent Name', 'Agent Url', 'Time_stamp']
     filename = "PrivatePropRes(Inside)2.csv"
     ids = []
-    semaphore = asyncio.Semaphore(500)
-
-    async with aiohttp.ClientSession() as session:
+    semaphore = threading.Semaphore(700)
+    
+    with requests.Session() as session:
         with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-            async def process_province(prov):
-                response_text = await fetch(session, f"https://www.privateproperty.co.za/for-sale/mpumalanga/{prov}", semaphore)
+            def process_province(prov):
+                response_text = fetch(f"https://www.privateproperty.co.za/for-sale/mpumalanga/{prov}", session, semaphore)
                 home_page = BeautifulSoup(response_text, 'html.parser')
 
                 links = []
@@ -181,7 +181,7 @@ async def main():
                 new_links = []
                 for l in links:
                     try:
-                        res_in_text = await fetch(session, f"{l}", semaphore)
+                        res_in_text = fetch(f"{l}", session, semaphore)
                         inner = BeautifulSoup(res_in_text, 'html.parser')
                         ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
                         if ul2:
@@ -192,54 +192,60 @@ async def main():
                                 new_links.append(link2)
                         else:
                             new_links.append(l)
-                    except aiohttp.ClientError as e:
+                    except requests.RequestException as e:
                         print(f"Request failed for {l}: {e}")
 
-                async def process_link(x):
+                def process_link(x):
                     try:
-                        x_response_text = await fetch(session, x, semaphore)
+                        x_response_text = fetch(x, session, semaphore)
                         x_page = BeautifulSoup(x_response_text, 'html.parser')
                         num_pages = getPages(x_page, x)
 
                         for s in range(1, num_pages + 1):
                             if s % 10 == 0:
                                 sleep_duration = random.randint(10, 15)
-                                await asyncio.sleep(sleep_duration)
+                                time.sleep(sleep_duration)
 
-                            prop_page_text = await fetch(session, f"{x}?page={s}", semaphore)
+                            prop_page_text = fetch(f"{x}?page={s}", session, semaphore)
                             x_prop = BeautifulSoup(prop_page_text, 'html.parser')
-                            prop_contain = x_prop.find_all('a', class_='listing-result')
+                            prop_contain = x_prop.find_all('div', class_='listingResult')
                             for prop in prop_contain:
-                                data = getIds(prop)
-                                ids.append(data)
-                    except Exception as e:
+                                prop_link = prop.find('a', class_='listingResult').get('href')
+                                link = f"https://www.privateproperty.co.za{prop_link}"
+                                ids.append(link)
+                    except requests.RequestException as e:
                         print(f"Request failed for {x}: {e}")
 
-                await asyncio.gather(*[process_link(x) for x in new_links])
+                with ThreadPoolExecutor(max_workers=15) as executor:
+                    executor.map(process_link, new_links)
 
-            prov_links = range(2, 3)
-            await asyncio.gather(*[process_province(prov) for prov in prov_links])
+            for prov in range(2,3):
+                process_province(prov)
 
-            async def process_property(prop_id):
-                try:
-                    prop_url = f"https://www.privateproperty.co.za/for-sale/property/{prop_id}"
-                    prop_response_text = await fetch(session, prop_url, semaphore)
-                    soupex = BeautifulSoup(prop_response_text, 'html.parser')
-                    comments = extractor(soupex, prop_url)
-                    writer.writerow(comments)
-                except Exception as e:
-                    print(f"Request failed for property {prop_id}: {e}")
+            with ThreadPoolExecutor(max_workers=10) as executor:
+                futures = [executor.submit(fetch, url, session, semaphore) for url in ids]
 
-            await asyncio.gather(*[process_property(prop_id) for prop_id in ids])
+                for future in as_completed(futures):
+                    try:
+                        response_text = future.result()
+                        soup = BeautifulSoup(response_text, 'html.parser')
+                        json_data = extractor(soup, url)
+                        writer.writerow(json_data)
+                    except Exception as e:
+                        print(f"Request failed for {url}: {e}")
 
             end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(f"Start Time: {start_time}")
+            print(f"End Time: {end_time}")
+
+            # Upload to Azure Blob Storage
             blob = BlobClient.from_connection_string(
-                "DefaultEndpointsProtocol=https;AccountName=privateproperty;AccountKey=zX/k04pby4o1V9av1a5U2E3fehg+1bo61C6cprAiPVnql+porseL1NVw6SlBBCnVaQKgxwfHjZyV+AStKg0N3A==;BlobEndpoint=https://privateproperty.blob.core.windows.net/;QueueEndpoint=https://privateproperty.queue.core.windows.net/;TableEndpoint=https://privateproperty.table.core.windows.net/;FileEndpoint=https://privateproperty.file.core.windows.net/;",
-                container_name="privateprop", blob_name="PrivatePropRes(Inside)2.csv")
+                conn_str="your_connection_string_here",
+                container_name="your_container_name_here",
+                blob_name=filename)
+
             with open(filename, "rb") as data:
-                blob.upload_blob(data, overwrite=True)
+                blob.upload_blob(data)
 
-            print(f"Scraping started at {start_time} and finished at {end_time}")
-
-if __name__ == '__main__':
-    asyncio.run(main())
+if __name__ == "__main__":
+    main()
