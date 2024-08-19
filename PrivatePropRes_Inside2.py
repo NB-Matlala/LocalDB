@@ -6,6 +6,7 @@ import random
 import csv
 import math
 import threading
+from threading import Lock
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from azure.storage.blob import BlobClient
@@ -159,6 +160,7 @@ def main():
                   'Agent Name', 'Agent Url', 'Time_stamp']
     filename = "PrivatePropRes(Inside)2.csv"
     ids = []
+    ids_lock = Lock()  # Protect shared resource
     semaphore = threading.Semaphore(700)
     
     with requests.Session() as session:
@@ -213,7 +215,8 @@ def main():
                             for prop in prop_contain:
                                 prop_link = prop.find('a', class_='listingResult').get('href')
                                 link = f"https://www.privateproperty.co.za{prop_link}"
-                                ids.append(link)
+                                with ids_lock:
+                                    ids.append(link)
                     except requests.RequestException as e:
                         print(f"Request failed for {x}: {e}")
 
@@ -223,13 +226,15 @@ def main():
             process_province('2')
 
             with ThreadPoolExecutor(max_workers=10) as executor:
-                futures = [executor.submit(fetch, url, session, semaphore) for url in ids]
+                futures = []
+                for url in ids:
+                    futures.append(executor.submit(fetch, url, session, semaphore))
 
                 for future in as_completed(futures):
                     try:
                         response_text = future.result()
                         soup = BeautifulSoup(response_text, 'html.parser')
-                        json_data = extractor(soup, url)
+                        json_data = extractor(soup, url)  # Explicitly pass the URL
                         writer.writerow(json_data)
                     except Exception as e:
                         print(f"Request failed for {url}: {e}")
@@ -245,8 +250,7 @@ def main():
                 blob_name=filename)
 
             with open(filename, "rb") as data:
-                blob.upload_blob(data, overwrite = True)
-
+                blob.upload_blob(data, overwrite=True)
 
 if __name__ == "__main__":
     main()
