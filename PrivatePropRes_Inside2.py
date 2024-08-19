@@ -246,7 +246,8 @@ def main():
                 blob_name=filename)
 
             with open(filename, "rb") as data:
-                blob.upload_blob(data)
+                blob.upload_blob(data, overwrite = True)
+
 
 if __name__ == "__main__":
     main()
