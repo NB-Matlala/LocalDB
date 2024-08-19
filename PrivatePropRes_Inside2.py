@@ -1,22 +1,17 @@
-import requests
-import re
 from bs4 import BeautifulSoup
+from requests_html import HTMLSession
+import re
+import math
 import json
 import random
 import csv
-import math
-import threading
-from threading import Lock
+import time
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from azure.storage.blob import BlobClient
 
-def fetch(url, session, semaphore):
-    with semaphore:
-        response = session.get(url)
-        return response.text
 
-######################################Functions##########################################################
+session = HTMLSession()
+
+
 def getPages(soupPage, url):
     try:
         num_pg = soupPage.find('div', class_='listing-results-layout__mobile-item-count txt-small-regular')
@@ -28,22 +23,7 @@ def getPages(soupPage, url):
         print(f"Failed to parse number of pages for URL: {url} - {e}")
         return 0
 
-def getIds(soup):
-    script_data = soup.find('script', type='application/ld+json').string
-    json_data = json.loads(script_data)
-    try:
-        url = json_data['url']
-        prop_ID_match = re.search(r'/([^/]+)$', url)
-        if prop_ID_match:
-            prop_ID = prop_ID_match.group(1)
-        else:
-            prop_ID = None
-    except KeyError:
-        prop_ID = None
-
-    return prop_ID
-
-def extractor(soup, url): # extracts from created urls
+def extractor(soup, url):
     try:
         prop_ID = None
         erfSize = None
@@ -51,7 +31,7 @@ def extractor(soup, url): # extracts from created urls
         rates = None
         levy = None
 
-        prop_div = soup.find('div', class_='property-features')
+        prop_div = soup.find('div',class_='property-features')
         lists = prop_div.find('ul', class_='property-features__list')
         features = lists.find_all('li')
         for feature in features:
@@ -125,132 +105,94 @@ def extractor(soup, url): # extracts from created urls
         parking = None
         storeys = None
 
-    agent_name = None
-    agent_url = None
-
     try:
+        agent_name = None
+        agent_url = None
         script_tag = soup.find('script', string=re.compile(r'const serverVariables'))
         if script_tag:
             script_content = script_tag.string
             script_data2 = re.search(r'const serverVariables\s*=\s*({.*?});', script_content, re.DOTALL).group(1)
             json_data = json.loads(script_data2)
-            try:
-                agent_name = json_data['bundleParams']['agencyInfo']['agencyName']
-                agent_url = json_data['bundleParams']['agencyInfo']['agencyPageUrl']
-                agent_url = f"https://www.privateproperty.co.za{agent_url}"
-            except :
-                agent_name = "Private Seller"
-                agent_url = None
+            agent_name = json_data['bundleParams']['agencyInfo']['agencyName']
+            agent_url = json_data['bundleParams']['agencyInfo']['agencyPageUrl']
+            agent_url = f"https://www.privateproperty.co.za{agent_url}"
     except (AttributeError, KeyError) as e:
         agent_name = None
         agent_url = None
 
-    current_datetime = datetime.now().strftime('%Y-%m-%d')
-
     return {
         "Listing ID": prop_ID, "Erf Size": erfSize, "Property Type": prop_type, "Floor Size": floor_size,
         "Rates and taxes": rates, "Levies": levy, "Bedrooms": beds, "Bathrooms": baths, "Lounges": lounge,
-        "Dining": dining, "Garages": garage, "Covered Parking": parking, "Storeys": storeys, "Agent Name": agent_name,
-        "Agent Url": agent_url, "Time_stamp": current_datetime}
+        "Dining": dining, "Garages": garage, "Covered Parking": parking, "Storeys": storeys, "Agent name": agent_name,
+        "Agent Url": agent_url}
 
-######################################Functions##########################################################
-def main():
-    fieldnames = ['Listing ID', 'Erf Size', 'Property Type', 'Floor Size', 'Rates and taxes', 'Levies',
-                  'Bedrooms', 'Bathrooms', 'Lounges', 'Dining', 'Garages', 'Covered Parking', 'Storeys',
-                  'Agent Name', 'Agent Url', 'Time_stamp']
-    filename = "PrivatePropRes(Inside)2.csv"
-    ids = []
-    ids_lock = Lock()  # Protect shared resource
-    semaphore = threading.Semaphore(700)
-    
-    with requests.Session() as session:
-        with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
-            start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+def getIds(soup):
+    script_data = soup.find('script', type='application/ld+json').string
+    json_data = json.loads(script_data)
+    try:
+        url = json_data['url']
+        prop_ID_match = re.search(r'/([^/]+)$', url)
+        if prop_ID_match:
+            prop_ID = prop_ID_match.group(1)
+        else:
+            prop_ID = None
+    except KeyError:
+        prop_ID = None
 
-            def process_province(prov):
-                response_text = fetch(f"https://www.privateproperty.co.za/for-sale/mpumalanga/{prov}", session, semaphore)
-                home_page = BeautifulSoup(response_text, 'html.parser')
+    return prop_ID
 
-                links = []
-                ul = home_page.find('ul', class_='region-content-holder__unordered-list')
-                li_items = ul.find_all('li')
-                for area in li_items:
-                    link = area.find('a')
-                    link = f"https://www.privateproperty.co.za{link.get('href')}"
-                    links.append(link)
 
-                new_links = []
-                for l in links:
-                    try:
-                        res_in_text = fetch(f"{l}", session, semaphore)
-                        inner = BeautifulSoup(res_in_text, 'html.parser')
-                        ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
-                        if ul2:
-                            li_items2 = ul2.find_all('li', class_='region-content-holder__list')
-                            for area2 in li_items2:
-                                link2 = area2.find('a')
-                                link2 = f"https://www.privateproperty.co.za{link2.get('href')}"
-                                new_links.append(link2)
-                        else:
-                            new_links.append(l)
-                    except requests.RequestException as e:
-                        print(f"Request failed for {l}: {e}")
+last_page = 3
+start_page = 1
 
-                def process_link(x):
-                    try:
-                        x_response_text = fetch(x, session, semaphore)
-                        x_page = BeautifulSoup(x_response_text, 'html.parser')
-                        num_pages = getPages(x_page, x)
+ids = []
+x = f"https://www.privateproperty.co.za/for-sale/mpumalanga/middelburg/1347"
+#########
 
-                        for s in range(1, num_pages + 1):
-                            if s % 10 == 0:
-                                sleep_duration = random.randint(10, 15)
-                                time.sleep(sleep_duration)
+response_text = session.get(f"https://www.privateproperty.co.za/for-sale/mpumalanga/2")
+home_page = BeautifulSoup(response_text.content, 'html.parser')
 
-                            prop_page_text = fetch(f"{x}?page={s}", session, semaphore)
-                            x_prop = BeautifulSoup(prop_page_text, 'html.parser')
-                            prop_contain = x_prop.find_all('div', class_='listingResult')
-                            for prop in prop_contain:
-                                prop_link = prop.find('a', class_='listingResult').get('href')
-                                link = f"https://www.privateproperty.co.za{prop_link}"
-                                with ids_lock:
-                                    ids.append(link)
-                    except requests.RequestException as e:
-                        print(f"Request failed for {x}: {e}")
+links = []
+ul = home_page.find('ul', class_='region-content-holder__unordered-list')
+li_items = ul.find_all('li')
+for area in li_items:
+    link = area.find('a')
+    link = f"https://www.privateproperty.co.za{link.get('href')}"
+    links.append(link)
 
-                with ThreadPoolExecutor(max_workers=15) as executor:
-                    executor.map(process_link, new_links)
+new_links = []
+for l in links:
+    try:
+        res_in_text = session.get(f"{l}")
+        inner = BeautifulSoup(res_in_text.content, 'html.parser')
+        ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
+        if ul2:
+            li_items2 = ul2.find_all('li', class_='region-content-holder__list')
+            for area2 in li_items2:
+                link2 = area2.find('a')
+                link2 = f"https://www.privateproperty.co.za{link2.get('href')}"
+                new_links.append(link2)
+        else:
+            new_links.append(l)
+    except :
+        print(f"Request failed for {l}")
 
-            process_province('2')
+#########
+# for i in range(1,6):
+#     print(new_links[i])
+for x in new_links:
+    land = session.get(x)
+    land_html = BeautifulSoup(land.content, 'html.parser')
+    pgs = getPages(land_html,x)
+    for p in range(1,pgs+1):
+        home_page = session.get(f"{x}?page={p}")
+        soup = BeautifulSoup(home_page.content, 'html.parser')
+        prop_contain = soup.find_all('a', class_='listing-result')
+        for x_page in prop_contain:
+            ids.append(getIds(x_page))
 
-            with ThreadPoolExecutor(max_workers=10) as executor:
-                futures = []
-                for url in ids:
-                    futures.append(executor.submit(fetch, url, session, semaphore))
-
-                for future in as_completed(futures):
-                    try:
-                        response_text = future.result()
-                        soup = BeautifulSoup(response_text, 'html.parser')
-                        json_data = extractor(soup, url)  # Explicitly pass the URL
-                        writer.writerow(json_data)
-                    except Exception as e:
-                        print(f"Request failed for {url}: {e}")
-
-            end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print(f"Start Time: {start_time}")
-            print(f"End Time: {end_time}")
-
-            # Upload to Azure Blob Storage
-            blob = BlobClient.from_connection_string(
-                conn_str="DefaultEndpointsProtocol=https;AccountName=privateproperty;AccountKey=zX/k04pby4o1V9av1a5U2E3fehg+1bo61C6cprAiPVnql+porseL1NVw6SlBBCnVaQKgxwfHjZyV+AStKg0N3A==;BlobEndpoint=https://privateproperty.blob.core.windows.net/;QueueEndpoint=https://privateproperty.queue.core.windows.net/;TableEndpoint=https://privateproperty.table.core.windows.net/;FileEndpoint=https://privateproperty.file.core.windows.net/;",
-                container_name="privateprop",
-                blob_name=filename)
-
-            with open(filename, "rb") as data:
-                blob.upload_blob(data, overwrite=True)
-
-if __name__ == "__main__":
-    main()
+    for list_id in ids:
+        list_url = f"https://www.privateproperty.co.za/for-sale/something/something/something/{list_id}"
+        listing = session.get(list_url)
+        list_page = BeautifulSoup(listing.content, 'html.parser')
+        print(extractor(list_page,list_url))
