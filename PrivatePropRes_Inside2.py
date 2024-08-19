@@ -241,8 +241,8 @@ def main():
 
             # Upload to Azure Blob Storage
             blob = BlobClient.from_connection_string(
-                conn_str="your_connection_string_here",
-                container_name="your_container_name_here",
+                conn_str="DefaultEndpointsProtocol=https;AccountName=privateproperty;AccountKey=zX/k04pby4o1V9av1a5U2E3fehg+1bo61C6cprAiPVnql+porseL1NVw6SlBBCnVaQKgxwfHjZyV+AStKg0N3A==;BlobEndpoint=https://privateproperty.blob.core.windows.net/;QueueEndpoint=https://privateproperty.queue.core.windows.net/;TableEndpoint=https://privateproperty.table.core.windows.net/;FileEndpoint=https://privateproperty.file.core.windows.net/;",
+                container_name="privateprop",
                 blob_name=filename)
 
             with open(filename, "rb") as data:
