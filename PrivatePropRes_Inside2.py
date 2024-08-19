@@ -220,8 +220,7 @@ def main():
                 with ThreadPoolExecutor(max_workers=15) as executor:
                     executor.map(process_link, new_links)
 
-            for prov in range(2,3):
-                process_province(prov)
+            process_province('2')
 
             with ThreadPoolExecutor(max_workers=10) as executor:
                 futures = [executor.submit(fetch, url, session, semaphore) for url in ids]
