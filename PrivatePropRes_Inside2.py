@@ -146,9 +146,9 @@ for loc in gp_links:
                 link2 = f"https://www.privateproperty.co.za{link2.get('href')}"
                 new_links.append(link2)
         else:
-            new_links.append(l)
+            new_links.append(loc)
     except Exception as e:
-        print(f"Request failed for {l}: {e}")
+        print(f"Request failed for {loc}: {e}")
     
     for x in new_links:
         try:
