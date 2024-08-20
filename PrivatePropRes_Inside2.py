@@ -7,6 +7,8 @@ import time
 import threading
 from queue import Queue
 from datetime import datetime
+import csv
+from azure.storage.blob import BlobClient
 
 session = HTMLSession()
 
@@ -41,38 +43,32 @@ def getPages(soupPage, url):
         return 0
 
 def extractor(soup, url):
-    try:
-        prop_ID = None
-        erfSize = None
-        floor_size = None
-        rates = None
-        levy = None
+    # Initialize variables with default values
+    prop_ID = erfSize = floor_size = rates = levy = None
+    beds = baths = lounge = dining = garage = parking = storeys = None
+    agent_name = agent_url = None
 
+    try:
         prop_div = soup.find('div', class_='property-features')
         lists = prop_div.find('ul', class_='property-features__list')
         features = lists.find_all('li')
         for feature in features:
             icon = feature.find('svg').find('use').get('xlink:href')
+            value = feature.find('span', class_='property-features__value').text.strip()
             if '#listing-alt' in icon:
-                prop_ID = feature.find('span', class_='property-features__value').text.strip()
+                prop_ID = value
             elif '#property-type' in icon:
-                prop_type = feature.find('span', class_='property-features__value').text.strip()
+                prop_type = value
             elif '#erf-size' in icon:
-                erfSize = feature.find('span', class_='property-features__value').text.strip()
-                erfSize = erfSize.replace('\xa0', ' ')
+                erfSize = value.replace('\xa0', ' ')
             elif '#property-size' in icon:
-                floor_size = feature.find('span', class_='property-features__value').text.strip()
-                floor_size = floor_size.replace('\xa0', ' ')
+                floor_size = value.replace('\xa0', ' ')
             elif '#rates' in icon:
-                rates = feature.find('span', class_='property-features__value').text.strip()
-                rates = rates.replace('\xa0', ' ')
+                rates = value.replace('\xa0', ' ')
             elif '#levies' in icon:
-                levy = feature.find('span', class_='property-features__value').text.strip()
-                levy = levy.replace('\xa0', ' ')
-
-    except KeyError as e:
-        print(f"Error in extracting features for {url}: {e}")
-        prop_ID, erfSize, prop_type, floor_size, rates, levy = None, None, None, None, None, None
+                levy = value.replace('\xa0', ' ')
+    except Exception as e:
+        print(f"Error extracting property features for {url}: {e}")
 
     try:
         prop_feat_div = soup.find('div', id='property-features-list')
@@ -80,28 +76,25 @@ def extractor(soup, url):
         feats = lists_feat.find_all('li')
         for feat in feats:
             feat_icon = feat.find('svg').find('use').get('xlink:href')
+            value = feat.find('span', class_='property-features__value').text.strip()
             if '#bedrooms' in feat_icon:
-                beds = feat.find('span', class_='property-features__value').text.strip()
+                beds = value
             elif '#bathroom' in feat_icon:
-                baths = feat.find('span', class_='property-features__value').text.strip()
+                baths = value
             elif '#lounges' in feat_icon:
-                lounge = feat.find('span', class_='property-features__value').text.strip()
+                lounge = value
             elif '#dining' in feat_icon:
-                dining = feat.find('span', class_='property-features__value').text.strip()
+                dining = value
             elif '#garages' in feat_icon:
-                garage = feat.find('span', class_='property-features__value').text.strip()
+                garage = value
             elif '#covered-parking' in feat_icon:
-                parking = feat.find('span', class_='property-features__value').text.strip()
+                parking = value
             elif '#storeys' in feat_icon:
-                storeys = feat.find('span', class_='property-features__value').text.strip()
-
-    except (AttributeError, KeyError) as f:
-        print(f"Property Features Not Found for {url}: {f}")
-        beds, baths, lounge, dining, garage, parking, storeys = None, None, None, None, None, None, None
+                storeys = value
+    except Exception as e:
+        print(f"Error extracting property features list for {url}: {e}")
 
     try:
-        agent_name = None
-        agent_url = None
         script_tag = soup.find('script', string=re.compile(r'const serverVariables'))
         if script_tag:
             script_content = script_tag.string
@@ -110,9 +103,8 @@ def extractor(soup, url):
             agent_name = json_data['bundleParams']['agencyInfo']['agencyName']
             agent_url = json_data['bundleParams']['agencyInfo']['agencyPageUrl']
             agent_url = f"https://www.privateproperty.co.za{agent_url}"
-    except (AttributeError, KeyError) as e:
-        print(f"Agent details not found for {url}: {e}")
-        agent_name, agent_url = None, None
+    except Exception as e:
+        print(f"Error extracting agent information for {url}: {e}")
 
     return {
         "Listing ID": prop_ID, "Erf Size": erfSize, "Property Type": prop_type, "Floor Size": floor_size,
@@ -128,14 +120,10 @@ def getIds(soup):
         url = json_data['url']
         prop_ID_match = re.search(r'/([^/]+)$', url)
         if prop_ID_match:
-            prop_ID = prop_ID_match.group(1)
-        else:
-            prop_ID = None
-    except (AttributeError, KeyError) as e:
-        print(f"Failed to extract ID: {e}")
-        prop_ID = None
-
-    return prop_ID
+            return prop_ID_match.group(1)
+    except Exception as e:
+        print(f"Error extracting ID from {soup}: {e}")
+    return None
 
 # Initialize thread queue and results list
 queue = Queue()
@@ -187,7 +175,7 @@ for x in new_links:
         print(f"Failed to process URL {x}: {e}")
 
 # Start threads
-num_threads = 30  # Adjust the number of threads based on your system's capabilities
+num_threads = 15  # Adjust the number of threads based on your system's capabilities
 threads = []
 for i in range(num_threads):
     t = threading.Thread(target=worker, args=(queue, results))
@@ -203,6 +191,23 @@ for i in range(num_threads):
 for t in threads:
     t.join()
 
-# Print or process the results
-for result in results:
-    print(result)
+# Write results to CSV
+csv_filename = 'PrivatePropRes(Inside)2.csv'
+with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
+    fieldnames = results[0].keys() if results else []
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer.writeheader()
+    for result in results:
+        writer.writerow(result)
+
+# Upload to Azure Blob Storage
+blob_connection_string = "DefaultEndpointsProtocol=https;AccountName=privateproperty;AccountKey=zX/k04pby4o1V9av1a5U2E3fehg+1bo61C6cprAiPVnql+porseL1NVw6SlBBCnVaQKgxwfHjZyV+AStKg0N3A==;BlobEndpoint=https://privateproperty.blob.core.windows.net/;QueueEndpoint=https://privateproperty.queue.core.windows.net/;TableEndpoint=https://privateproperty.table.core.windows.net/;FileEndpoint=https://privateproperty.file.core.windows.net/;"
+blob = BlobClient.from_connection_string(
+    blob_connection_string,
+    container_name="privateprop",
+    blob_name=csv_filename
+)
+with open(csv_filename, "rb") as data:
+    blob.upload_blob(data, overwrite=True)
+
+print("CSV file uploaded to Azure Blob Storage.")
