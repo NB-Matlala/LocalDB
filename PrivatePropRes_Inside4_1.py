@@ -132,33 +132,23 @@ results = []
 gp_links = ['https://www.privateproperty.co.za/for-sale/gauteng/johannesburg/33',
             'https://www.privateproperty.co.za/for-sale/gauteng/midrand/24']
 for loc in gp_links:
-    response_text = session.get(f"{loc}")
+    response_text = session.get(loc)
     home_page = BeautifulSoup(response_text.content, 'html.parser')
-    
-    links = []
-    ul = home_page.find('ul', class_='region-content-holder__unordered-list')
-    li_items = ul.find_all('li')
-    for area in li_items:
-        link = area.find('a')
-        link = f"https://www.privateproperty.co.za{link.get('href')}"
-        links.append(link)
-    
+        
     new_links = []
-    for l in links:
-        try:
-            res_in_text = session.get(f"{l}")
-            inner = BeautifulSoup(res_in_text.content, 'html.parser')
-            ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
-            if ul2:
-                li_items2 = ul2.find_all('li', class_='region-content-holder__list')
-                for area2 in li_items2:
-                    link2 = area2.find('a')
-                    link2 = f"https://www.privateproperty.co.za{link2.get('href')}"
-                    new_links.append(link2)
-            else:
-                new_links.append(l)
-        except Exception as e:
-            print(f"Request failed for {l}: {e}")
+    try:
+        inner = home_page
+        ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
+        if ul2:
+            li_items2 = ul2.find_all('li', class_='region-content-holder__list')
+            for area2 in li_items2:
+                link2 = area2.find('a')
+                link2 = f"https://www.privateproperty.co.za{link2.get('href')}"
+                new_links.append(link2)
+        else:
+            new_links.append(loc)
+    except Exception as e:
+        print(f"Request failed for {loc}: {e}")
     
     for x in new_links:
         try:
@@ -178,7 +168,7 @@ for loc in gp_links:
             print(f"Failed to process URL {x}: {e}")
 
 # Start threads
-num_threads = 15  # Adjust the number of threads based on your system's capabilities
+num_threads = 10  # Adjust the number of threads based on your system's capabilities
 threads = []
 for i in range(num_threads):
     t = threading.Thread(target=worker, args=(queue, results))
@@ -195,7 +185,7 @@ for t in threads:
     t.join()
 
 # Write results to CSV
-csv_filename = 'PrivatePropRes(Inside)p1.csv'
+csv_filename = 'PrivatePropRes(Inside)01.csv'
 with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
     fieldnames = results[0].keys() if results else []
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
