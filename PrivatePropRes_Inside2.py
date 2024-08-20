@@ -132,7 +132,7 @@ results = []
 gp_links = ['https://www.privateproperty.co.za/for-sale/gauteng/johannesburg/33',
             'https://www.privateproperty.co.za/for-sale/gauteng/midrand/24']
 for loc in gp_links:
-    response_text = session.get(f"{loc}")
+    response_text = session.get(loc)
     home_page = BeautifulSoup(response_text.content, 'html.parser')
     
     links = []
