@@ -1,8 +1,5 @@
 name: Web PrivPropRes(Inside)2
 on:
-  push:
-    branches:
-      - main
   workflow_run:
     workflows: ["Web PrivPropRes(Inside)"]
     types:
