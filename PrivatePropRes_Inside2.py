@@ -129,7 +129,7 @@ def getIds(soup):
 queue = Queue()
 results = []
 
-response_text = session.get(f"https://www.privateproperty.co.za/for-sale/mpumalanga/2")
+response_text = session.get(f"https://www.privateproperty.co.za/for-sale/mpumalanga/3")
 home_page = BeautifulSoup(response_text.content, 'html.parser')
 
 links = []
