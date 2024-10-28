@@ -9,6 +9,10 @@ import csv
 import math
 from datetime import datetime
 from azure.storage.blob import BlobClient
+import os
+
+base_url = os.getenv("BASE_URL")
+con_str = os.getenv("CON_STR")
 
 async def fetch(session, url):
     async with session.get(url) as response:
@@ -54,7 +58,7 @@ def commercial_extractor(soup):
                 agent_id_match = re.search(r'offices/(\d+)', agent_url)
                 if agent_id_match:
                     agent_id = agent_id_match.group(1)
-                    agent_url = f"https://www.privateproperty.co.za/estate-agency/estate-agent/{agent_id}"
+                    agent_url = f"{base_url}/estate-agency/estate-agent/{agent_id}"
             except:
                 agent_name = "Private Seller"
                 agent_url = None
@@ -149,7 +153,7 @@ def indust_extractor(soup):
                 agent_id_match = re.search(r'offices/(\d+)', agent_url)
                 if agent_id_match:
                     agent_id = agent_id_match.group(1)
-                    agent_url = f"https://www.privateproperty.co.za/estate-agency/estate-agent/{agent_id}"
+                    agent_url = f"{base_url}/estate-agency/estate-agent/{agent_id}"
             except:
                 agent_name = "Private Seller"
                 agent_url = None
@@ -244,7 +248,7 @@ def retail_extractor(soup):
                 agent_id_match = re.search(r'offices/(\d+)', agent_url)
                 if agent_id_match:
                     agent_id = agent_id_match.group(1)
-                    agent_url = f"https://www.privateproperty.co.za/estate-agency/estate-agent/{agent_id}"
+                    agent_url = f"{base_url}/estate-agency/estate-agent/{agent_id}"
             except:
                 agent_name = "Private Seller"
                 agent_url = None
@@ -339,7 +343,7 @@ def office_extractor(soup):
                 agent_id_match = re.search(r'offices/(\d+)', agent_url)
                 if agent_id_match:
                     agent_id = agent_id_match.group(1)
-                    agent_url = f"https://www.privateproperty.co.za/estate-agency/estate-agent/{agent_id}"
+                    agent_url = f"{base_url}/estate-agency/estate-agent/{agent_id}"
             except:
                 agent_name = "Private Seller"
                 agent_url = None
@@ -434,7 +438,7 @@ def hospit_extractor(soup):
                 agent_id_match = re.search(r'offices/(\d+)', agent_url)
                 if agent_id_match:
                     agent_id = agent_id_match.group(1)
-                    agent_url = f"https://www.privateproperty.co.za/estate-agency/estate-agent/{agent_id}"
+                    agent_url = f"{base_url}/estate-agency/estate-agent/{agent_id}"
             except:
                 agent_name = "Private Seller"
                 agent_url = None
@@ -529,7 +533,7 @@ def plot_extractor(soup):
                 agent_id_match = re.search(r'offices/(\d+)', agent_url)
                 if agent_id_match:
                     agent_id = agent_id_match.group(1)
-                    agent_url = f"https://www.privateproperty.co.za/estate-agency/estate-agent/{agent_id}"
+                    agent_url = f"{base_url}/estate-agency/estate-agent/{agent_id}"
             except:
                 agent_name = "Private Seller"
                 agent_url = None
@@ -612,7 +616,7 @@ async def main():
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             async def process_province(prov):
-                response_text = await fetch(session, f"https://www.privateproperty.co.za/commercial-sales/gauteng/{prov}")
+                response_text = await fetch(session, f"{base_url}/commercial-sales/gauteng/{prov}")
                 home_page = BeautifulSoup(response_text, 'html.parser')
 
                 links = []
@@ -620,7 +624,7 @@ async def main():
                 li_items = ul.find_all('li')
                 for area in li_items:
                     link = area.find('a')
-                    link = f"https://www.privateproperty.co.za{link.get('href')}"
+                    link = f"{base_url}{link.get('href')}"
                     links.append(link)
 
                 new_links = []
@@ -633,7 +637,7 @@ async def main():
                             li_items2 = ul2.find_all('li', class_='region-content-holder__list')
                             for area2 in li_items2:
                                 link2 = area2.find('a')
-                                link2 = f"https://www.privateproperty.co.za{link2.get('href')}"
+                                link2 = f"{base_url}{link2.get('href')}"
                                 new_links.append(link2)
                         else:
                             new_links.append(l)
@@ -779,7 +783,7 @@ async def main():
 
 
         # Upload the CSV file to Azure Blob Storage
-        connection_string = "DefaultEndpointsProtocol=https;AccountName=privateproperty;AccountKey=zX/k04pby4o1V9av1a5U2E3fehg+1bo61C6cprAiPVnql+porseL1NVw6SlBBCnVaQKgxwfHjZyV+AStKg0N3A==;BlobEndpoint=https://privateproperty.blob.core.windows.net/;QueueEndpoint=https://privateproperty.queue.core.windows.net/;TableEndpoint=https://privateproperty.table.core.windows.net/;FileEndpoint=https://privateproperty.file.core.windows.net/;"
+        connection_string = f"{con_str}"
         container_name = "privateprop"
         blob_name = "PrivatePropCom.csv"
 
@@ -925,7 +929,7 @@ def extractor(soup, url): # extracts from created urls
             try:
                 agent_name = json_data['bundleParams']['agencyInfo']['agencyName']
                 agent_url = json_data['bundleParams']['agencyInfo']['agencyPageUrl']
-                agent_url = f"https://www.privateproperty.co.za{agent_url}"
+                agent_url = f"{base_url}{agent_url}"
             except :
                 agent_name = "Private Seller"
                 agent_url = None
@@ -957,7 +961,7 @@ async def main2():
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             async def process_province2(prov):
-                response_text = await fetch2(session2, f"https://www.privateproperty.co.za/commercial-sales/gauteng/{prov}", semaphore2)
+                response_text = await fetch2(session2, f"{base_url}/commercial-sales/gauteng/{prov}", semaphore2)
                 home_page = BeautifulSoup(response_text, 'html.parser')
 
                 links = []
@@ -965,7 +969,7 @@ async def main2():
                 li_items = ul.find_all('li')
                 for area in li_items:
                     link = area.find('a')
-                    link = f"https://www.privateproperty.co.za{link.get('href')}"
+                    link = f"{base_url}{link.get('href')}"
                     links.append(link)
 
                 new_links = []
@@ -978,7 +982,7 @@ async def main2():
                             li_items2 = ul2.find_all('li', class_='region-content-holder__list')
                             for area2 in li_items2:
                                 link2 = area2.find('a')
-                                link2 = f"https://www.privateproperty.co.za{link2.get('href')}"
+                                link2 = f"{base_url}{link2.get('href')}"
                                 new_links.append(link2)
                         else:
                             new_links.append(l)
@@ -1017,7 +1021,7 @@ async def main2():
                     if count % 1000 == 0:
                         print(f"Processed {count} IDs, sleeping for 20 seconds...")
                         await asyncio.sleep(55)
-                    list_url = f"https://www.privateproperty.co.za/for-sale/something/something/something/{list_id}"
+                    list_url = f"{base_url}/for-sale/something/something/something/{list_id}"
                     try:
                         listing = await fetch2(session2, list_url, semaphore2)
                         list_page = BeautifulSoup(listing, 'html.parser')
@@ -1035,7 +1039,7 @@ async def main2():
             print(f"Start Time: {start_time}")
             print(f"End Time: {end_time}")
 
-    connection_string = "DefaultEndpointsProtocol=https;AccountName=privateproperty;AccountKey=zX/k04pby4o1V9av1a5U2E3fehg+1bo61C6cprAiPVnql+porseL1NVw6SlBBCnVaQKgxwfHjZyV+AStKg0N3A==;BlobEndpoint=https://privateproperty.blob.core.windows.net/;QueueEndpoint=https://privateproperty.queue.core.windows.net/;TableEndpoint=https://privateproperty.table.core.windows.net/;FileEndpoint=https://privateproperty.file.core.windows.net/;"
+    connection_string = f"{con_str}"
     container_name = "privateprop"
     blob_name = "PrivatePropRes(Inside)5.csv"
 
