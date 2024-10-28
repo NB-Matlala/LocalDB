@@ -8,6 +8,9 @@ on:
 jobs:
   Commercial:
     runs-on: ubuntu-latest
+    env:
+      BASE_URL: ${{ vars.BASE_URL }}
+      CON_STR: ${{ vars.CON_STR }}
 
     steps:
       - name: Checkout code
