@@ -10,6 +10,10 @@ from queue import Queue
 from datetime import datetime
 import csv
 from azure.storage.blob import BlobClient
+import os
+
+base_url = os.getenv("BASE_URL")
+con_str = os.getenv("CON_STR")
 
 session = HTMLSession()
 
@@ -103,7 +107,7 @@ def extractor(soup, url):
             json_data = json.loads(script_data2)
             agent_name = json_data['bundleParams']['agencyInfo']['agencyName']
             agent_url = json_data['bundleParams']['agencyInfo']['agencyPageUrl']
-            agent_url = f"https://www.privateproperty.co.za{agent_url}"
+            agent_url = f"{base_url}{agent_url}"
     except Exception as e:
         print(f"Error extracting agent information for {url}: {e}")
     
@@ -133,7 +137,7 @@ queue = Queue()
 results = []
 
 for prov in range(5, 11):
-    response_text = session.get(f"https://www.privateproperty.co.za/for-sale/mpumalanga/{prov}")
+    response_text = session.get(f"{base_url}/for-sale/mpumalanga/{prov}")
     home_page = BeautifulSoup(response_text.content, 'html.parser')
     
     links = []
@@ -141,7 +145,7 @@ for prov in range(5, 11):
     li_items = ul.find_all('li')
     for area in li_items:
         link = area.find('a')
-        link = f"https://www.privateproperty.co.za{link.get('href')}"
+        link = f"{base_url}{link.get('href')}"
         links.append(link)
     
     new_links = []
@@ -154,7 +158,7 @@ for prov in range(5, 11):
                 li_items2 = ul2.find_all('li', class_='region-content-holder__list')
                 for area2 in li_items2:
                     link2 = area2.find('a')
-                    link2 = f"https://www.privateproperty.co.za{link2.get('href')}"
+                    link2 = f"{base_url}{link2.get('href')}"
                     new_links.append(link2)
             else:
                 new_links.append(l)
@@ -173,7 +177,7 @@ for prov in range(5, 11):
                 for x_page in prop_contain:
                     prop_id = getIds(x_page)
                     if prop_id:
-                        list_url = f"https://www.privateproperty.co.za/for-sale/something/something/something/{prop_id}"
+                        list_url = f"{base_url}/for-sale/something/something/something/{prop_id}"
                         queue.put({"url": list_url, "extract_function": extractor})
         except Exception as e:
             print(f"Failed to process URL {x}: {e}")
@@ -205,7 +209,7 @@ with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
         writer.writerow(result)
 
 # Upload to Azure Blob Storage
-blob_connection_string = "DefaultEndpointsProtocol=https;AccountName=privateproperty;AccountKey=zX/k04pby4o1V9av1a5U2E3fehg+1bo61C6cprAiPVnql+porseL1NVw6SlBBCnVaQKgxwfHjZyV+AStKg0N3A==;BlobEndpoint=https://privateproperty.blob.core.windows.net/;QueueEndpoint=https://privateproperty.queue.core.windows.net/;TableEndpoint=https://privateproperty.table.core.windows.net/;FileEndpoint=https://privateproperty.file.core.windows.net/;"
+blob_connection_string = f"{con_str}"
 blob = BlobClient.from_connection_string(
     blob_connection_string,
     container_name="privateprop",
