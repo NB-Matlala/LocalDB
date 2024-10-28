@@ -8,7 +8,10 @@ on:
 jobs:
   scrapeinside3:
     runs-on: ubuntu-latest
-
+    env:
+      BASE_URL: ${{ vars.BASE_URL }}
+      CON_STR: ${{ vars.CON_STR }}
+      
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
