@@ -135,8 +135,8 @@ def getIds(soup):
 queue = Queue()
 results = []
 
-gp_links = ['{base_url}/for-sale/gauteng/johannesburg/33',
-            '{base_url}/for-sale/gauteng/midrand/24']
+gp_links = [f'{base_url}/for-sale/gauteng/johannesburg/33',
+            f'{base_url}/for-sale/gauteng/midrand/24']
 for loc in gp_links:
     response_text = session.get(loc)
     home_page = BeautifulSoup(response_text.content, 'html.parser')
