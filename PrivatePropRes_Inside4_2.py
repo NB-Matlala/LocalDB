@@ -137,9 +137,9 @@ def getIds(soup):
 queue = Queue()
 results = []
 
-gp_links = ['{base_url}/for-sale/gauteng/pretoria/28',
-             '{base_url}/for-sale/gauteng/centurion/32',
-            '{base_url}/for-sale/gauteng/west-rand/839']
+gp_links = [f'{base_url}/for-sale/gauteng/pretoria/28',
+             f'{base_url}/for-sale/gauteng/centurion/32',
+            f'{base_url}/for-sale/gauteng/west-rand/839']
 
 for loc in gp_links:
     response_text = session.get(loc)
