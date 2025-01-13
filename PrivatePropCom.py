@@ -843,32 +843,31 @@ def extractor(soup, url): # extracts from created urls
         rates = None
         levy = None
 
-        
         prop_div = soup.find('div', class_='property-details')
         lists = prop_div.find('ul', class_='property-details__list')
         features = lists.find_all('li')
         for feature in features:
             icon = feature.find('svg').find('use').get('xlink:href')
             if '#listing-alt' in icon:
-                prop_ID = feature.find('span',class_='property-features__value').text.strip()
+                prop_ID = feature.find('span', class_='property-details__value').text.strip()
 
             elif '#property-type' in icon:
-                prop_type = feature.find('span',class_='property-features__value').text.strip()
+                prop_type = feature.find('span', class_='property-details__value').text.strip()
 
             elif '#erf-size' in icon:
-                erfSize = feature.find('span',class_='property-features__value').text.strip()
+                erfSize = feature.find('span', class_='property-details__value').text.strip()
                 erfSize = erfSize.replace('\xa0', ' ')
 
             elif '#property-size' in icon:
-                floor_size = feature.find('span',class_='property-features__value').text.strip()
+                floor_size = feature.find('span', class_='property-details__value').text.strip()
                 floor_size = floor_size.replace('\xa0', ' ')
 
             elif '#rates' in icon:
-                rates = feature.find('span',class_='property-features__value').text.strip()
+                rates = feature.find('span', class_='property-details__value').text.strip()
                 rates = rates.replace('\xa0', ' ')
 
             elif '#levies' in icon:
-                levy = feature.find('span',class_='property-features__value').text.strip()
+                levy = feature.find('span', class_='property-details__value').text.strip()
                 levy = levy.replace('\xa0', ' ')
 
     except KeyError:
