@@ -58,7 +58,7 @@ def extractor(soup, url):
         features = lists.find_all('li')
         for feature in features:
             icon = feature.find('svg').find('use').get('xlink:href')
-            value = feature.find('span', class_='property-features__value').text.strip()
+            value = feature.find('span', class_='property-details__value').text.strip()
             if '#listing-alt' in icon:
                 prop_ID = value
             elif '#property-type' in icon:
