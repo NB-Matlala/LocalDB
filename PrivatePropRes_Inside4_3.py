@@ -1,4 +1,4 @@
-###################################################################################################################################################
+ai###################################################################################################################################################
 
 from bs4 import BeautifulSoup
 from requests_html import HTMLSession
@@ -74,7 +74,7 @@ def extractor(soup, url):
             elif '#levies' in icon:
                 levy = value.replace('\xa0', ' ')
     except Exception as e:
-        print(f"Error extracting property features for {url}: {e}")
+        print(f"Error extracting property details for {url}: {e}")
 
     try:
         prop_feat_div = soup.find('div', id='property-features-list')
