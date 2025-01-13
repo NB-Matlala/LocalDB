@@ -55,8 +55,8 @@ def extractor(soup, url):
     agent_name = agent_url = None
 
     try:
-        prop_div = soup.find('div', class_='property-features')
-        lists = prop_div.find('ul', class_='property-features__list')
+        prop_div = soup.find('div', class_='property-details')
+        lists = prop_div.find('ul', class_='property-details__list')
         features = lists.find_all('li')
         for feature in features:
             icon = feature.find('svg').find('use').get('xlink:href')
