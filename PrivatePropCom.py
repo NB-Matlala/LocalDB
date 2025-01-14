@@ -10,6 +10,13 @@ import math
 from datetime import datetime
 from azure.storage.blob import BlobClient
 import os
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+
+chrome_options = Options()
+chrome_options.add_argument("--headless")
+driver = webdriver.Chrome(options=chrome_options)
+
 
 base_url = os.getenv("BASE_URL")
 con_str = os.getenv("CON_STR")
@@ -921,18 +928,15 @@ def extractor(soup, url): # extracts from created urls
     agent_url = None
 
     try:
-        script_tag = soup.find('script', string=re.compile(r'const serverVariables'))
-        if script_tag:
-            script_content = script_tag.string
-            script_data2 = re.search(r'const serverVariables\s*=\s*({.*?});', script_content, re.DOTALL).group(1)
-            json_data = json.loads(script_data2)
-            try:
-                agent_name = json_data['bundleParams']['agencyInfo']['agencyName']
-                agent_url = json_data['bundleParams']['agencyInfo']['agencyPageUrl']
-                agent_url = f"{base_url}{agent_url}"
-            except :
-                agent_name = "Private Seller"
-                agent_url = None
+        driver.get(url)  
+        html_content = driver.page_source
+        # Use BeautifulSoup to parse the page
+        soup = BeautifulSoup(html_content, 'html.parser')
+
+        link = soup.find('a', class_='VjDc4nmKFmlUBYyyILgD').get('href')
+        agent_name = soup.find('a', class_='VjDc4nmKFmlUBYyyILgD').get('title')
+
+        agent_url = f"{base_url}{link}"
     except (AttributeError, KeyError) as e:
         agent_name = None
         agent_url = None
