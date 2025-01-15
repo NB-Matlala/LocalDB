@@ -12,12 +12,12 @@ from datetime import datetime
 import csv
 from azure.storage.blob import BlobClient
 import os
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+# from selenium import webdriver
+# from selenium.webdriver.chrome.options import Options
 
-chrome_options = Options()
-chrome_options.add_argument("--headless")
-driver = webdriver.Chrome(options=chrome_options)
+# chrome_options = Options()
+# chrome_options.add_argument("--headless")
+# driver = webdriver.Chrome(options=chrome_options)
 
 
 base_url = os.getenv("BASE_URL")
@@ -107,18 +107,18 @@ def extractor(soup, url):
     except Exception as e:
         print(f"Error extracting property features list for {url}: {e}")
 
-    try:
-        driver.get(url)  
-        html_content = driver.page_source
-        # Use BeautifulSoup to parse the page
-        soup = BeautifulSoup(html_content, 'html.parser')
+    # try:
+    #     driver.get(url)  
+    #     html_content = driver.page_source
+    #     # Use BeautifulSoup to parse the page
+    #     soup = BeautifulSoup(html_content, 'html.parser')
 
-        link = soup.find('a', class_='VjDc4nmKFmlUBYyyILgD').get('href')
-        agent_name = soup.find('a', class_='VjDc4nmKFmlUBYyyILgD').get('title')
+    #     link = soup.find('a', class_='VjDc4nmKFmlUBYyyILgD').get('href')
+    #     agent_name = soup.find('a', class_='VjDc4nmKFmlUBYyyILgD').get('title')
 
-        agent_url = f"{base_url}{link}"
-    except Exception as e:
-        print(f"Error extracting agent information for {url}: {e}")
+    #     agent_url = f"{base_url}{link}"
+    # except Exception as e:
+    #     print(f"Error extracting agent information for {url}: {e}")
 
     current_datetime = datetime.now().strftime('%Y-%m-%d')
     
@@ -222,5 +222,5 @@ with open(csv_filename, "rb") as data:
     blob.upload_blob(data, overwrite=True)
 
 print("CSV file uploaded to Azure Blob Storage.")
-driver.quit()
+# driver.quit()
 
