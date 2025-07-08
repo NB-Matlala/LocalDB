@@ -969,33 +969,33 @@ async def main2():
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             async def process_province2(prov):
-                response_text = await fetch2(session2, f"{base_url}/commercial-sales/gauteng/{prov}", semaphore2)
-                home_page = BeautifulSoup(response_text, 'html.parser')
+                # response_text = await fetch2(session2, f"{base_url}/commercial-sales/gauteng/{prov}", semaphore2)
+                # home_page = BeautifulSoup(response_text, 'html.parser')
 
-                links = []
-                ul = home_page.find('ul', class_='region-content-holder__unordered-list')
-                li_items = ul.find_all('li')
-                for area in li_items:
-                    link = area.find('a')
-                    link = f"{base_url}{link.get('href')}"
-                    links.append(link)
+                # links = []
+                # ul = home_page.find('ul', class_='region-content-holder__unordered-list')
+                # li_items = ul.find_all('li')
+                # for area in li_items:
+                #     link = area.find('a')
+                #     link = f"{base_url}{link.get('href')}"
+                #     links.append(link)
 
                 new_links = []
-                for l in links:
-                    try:
-                        res_in_text = await fetch2(session2, f"{l}", semaphore2)
-                        inner = BeautifulSoup(res_in_text, 'html.parser')
-                        ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
-                        if ul2:
-                            li_items2 = ul2.find_all('li', class_='region-content-holder__list')
-                            for area2 in li_items2:
-                                link2 = area2.find('a')
-                                link2 = f"{base_url}{link2.get('href')}"
-                                new_links.append(link2)
-                        else:
-                            new_links.append(l)
-                    except aiohttp.ClientError as e:
-                        print(f"Request failed for {l}: {e}")
+                # for l in links:
+                try:
+                    res_in_text = await fetch2(session2, f"{base_url}/commercial-sales/gauteng/{prov}", semaphore2)
+                    inner = BeautifulSoup(res_in_text, 'html.parser')
+                    ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
+                    if ul2:
+                        li_items2 = ul2.find_all('li', class_='region-content-holder__list')
+                        for area2 in li_items2:
+                            link2 = area2.find('a')
+                            link2 = f"{base_url}{link2.get('href')}"
+                            new_links.append(link2)
+                    else:
+                        new_links.append(l)
+                except aiohttp.ClientError as e:
+                    print(f"Request failed for {l}: {e}")
 
                 async def process_link(x):
                     try:
