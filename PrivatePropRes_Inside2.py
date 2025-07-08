@@ -137,7 +137,7 @@ results = []
 
 # response_text = session.get(f"{base_url}/for-sale/mpumalanga/2")
 # home_page = BeautifulSoup(response_text.content, 'html.parser')
-x = f"{base_url}/for-sale/mpumalanga/2"
+# x = f"{base_url}/for-sale/mpumalanga/2"
 
 # links = []
 # ul = home_page.find('ul', class_='region-content-holder__unordered-list')
@@ -148,38 +148,39 @@ x = f"{base_url}/for-sale/mpumalanga/2"
 #     links.append(link)
 
 # new_links = []
-# for l in links:
-#     try:
-#         res_in_text = session.get(f"{l}")
-#         inner = BeautifulSoup(res_in_text.content, 'html.parser')
-#         ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
-#         if ul2:
-#             li_items2 = ul2.find_all('li', class_='region-content-holder__list')
-#             for area2 in li_items2:
-#                 link2 = area2.find('a')
-#                 link2 = f"{base_url}{link2.get('href')}"
-#                 new_links.append(link2)
-#         else:
-#             new_links.append(l)
-#     except Exception as e:
-#         print(f"Request failed for {l}: {e}")
 
-# for x in new_links:
+# for l in links:
 try:
-    land = session.get(x)
-    land_html = BeautifulSoup(land.content, 'html.parser')
-    pgs = getPages(land_html, x)
-    for p in range(1, pgs + 1):
-        home_page = session.get(f"{x}?page={p}")
-        soup = BeautifulSoup(home_page.content, 'html.parser')
-        prop_contain = soup.find_all('a', class_='listing-result')
-        for x_page in prop_contain:
-            prop_id = getIds(x_page)
-            if prop_id:
-                list_url = f"{base_url}/for-sale/something/something/something/{prop_id}"
-                queue.put({"url": list_url, "extract_function": extractor})
+    res_in_text = session.get(f"{base_url}/for-sale/mpumalanga/2")
+    inner = BeautifulSoup(res_in_text.content, 'html.parser')
+    ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
+    if ul2:
+        li_items2 = ul2.find_all('li', class_='region-content-holder__list')
+        for area2 in li_items2:
+            link2 = area2.find('a')
+            link2 = f"{base_url}{link2.get('href')}"
+            new_links.append(link2)
+    else:
+        new_links.append(l)
 except Exception as e:
-    print(f"Failed to process URL {x}: {e}")
+    print(f"Request failed for {l}: {e}")
+
+for x in new_links:
+    try:
+        land = session.get(x)
+        land_html = BeautifulSoup(land.content, 'html.parser')
+        pgs = getPages(land_html, x)
+        for p in range(1, pgs + 1):
+            home_page = session.get(f"{x}?page={p}")
+            soup = BeautifulSoup(home_page.content, 'html.parser')
+            prop_contain = soup.find_all('a', class_='listing-result')
+            for x_page in prop_contain:
+                prop_id = getIds(x_page)
+                if prop_id:
+                    list_url = f"{base_url}/for-sale/something/something/something/{prop_id}"
+                    queue.put({"url": list_url, "extract_function": extractor})
+    except Exception as e:
+        print(f"Failed to process URL {x}: {e}")
 
 # Start threads
 num_threads = 10  
