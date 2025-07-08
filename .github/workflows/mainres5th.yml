@@ -1,6 +1,7 @@
 name: Web PrivPropRes
 
 on:
+  workflow_dispatch:
   workflow_run:
     workflows: ["Web PrivPropCom"]
     types:
