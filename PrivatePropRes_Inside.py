@@ -161,7 +161,7 @@ for prov in range(5, 11):
         else:
             new_links.append(l)
     except Exception as e:
-        print(f"Request failed for {l}: {e}")
+        print(f"Request failed for {base_url}/for-sale/mpumalanga/{prov}: {e}")
     
     for x in new_links:
         try:
