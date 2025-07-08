@@ -159,7 +159,7 @@ for prov in range(5, 11):
                 link2 = f"{base_url}{link2.get('href')}"
                 new_links.append(link2)
         else:
-            new_links.append(l)
+            new_links.append(f"{base_url}/for-sale/mpumalanga/{prov}")
     except Exception as e:
         print(f"Request failed for {base_url}/for-sale/mpumalanga/{prov}: {e}")
     
