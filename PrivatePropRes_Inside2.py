@@ -147,7 +147,7 @@ results = []
 #     link = f"{base_url}{link.get('href')}"
 #     links.append(link)
 
-# new_links = []
+new_links = []
 
 # for l in links:
 try:
