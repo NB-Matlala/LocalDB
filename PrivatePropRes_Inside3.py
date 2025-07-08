@@ -146,7 +146,7 @@ results = []
 #     link = f"{base_url}{link.get('href')}"
 #     links.append(link)
 
-# new_links = []
+new_links = []
 # for l in links:
 try:
     res_in_text = session.get(f"{base_url}/for-sale/mpumalanga/4")
