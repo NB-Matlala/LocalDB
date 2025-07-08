@@ -995,7 +995,7 @@ async def main2():
                     else:
                         new_links.append(l)
                 except aiohttp.ClientError as e:
-                    print(f"Request failed for {l}: {e}")
+                    print(f"Request failed for {base_url}/commercial-sales/gauteng/{prov}: {e}")
 
                 async def process_link(x):
                     try:
