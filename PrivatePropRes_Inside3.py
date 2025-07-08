@@ -137,7 +137,7 @@ results = []
 
 # response_text = session.get(f"{base_url}/for-sale/mpumalanga/4")
 # home_page = BeautifulSoup(response_text.content, 'html.parser')
-x = f"{base_url}/for-sale/mpumalanga/4"
+# x = f"{base_url}/for-sale/mpumalanga/4"
 # links = []
 # ul = home_page.find('ul', class_='region-content-holder__unordered-list')
 # li_items = ul.find_all('li')
@@ -148,20 +148,20 @@ x = f"{base_url}/for-sale/mpumalanga/4"
 
 # new_links = []
 # for l in links:
-#     try:
-#         res_in_text = session.get(f"{l}")
-#         inner = BeautifulSoup(res_in_text.content, 'html.parser')
-#         ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
-#         if ul2:
-#             li_items2 = ul2.find_all('li', class_='region-content-holder__list')
-#             for area2 in li_items2:
-#                 link2 = area2.find('a')
-#                 link2 = f"{base_url}{link2.get('href')}"
-#                 new_links.append(link2)
-#         else:
-#             new_links.append(l)
-#     except Exception as e:
-#         print(f"Request failed for {l}: {e}")
+try:
+    res_in_text = session.get(f"{base_url}/for-sale/mpumalanga/4")
+    inner = BeautifulSoup(res_in_text.content, 'html.parser')
+    ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
+    if ul2:
+        li_items2 = ul2.find_all('li', class_='region-content-holder__list')
+        for area2 in li_items2:
+            link2 = area2.find('a')
+            link2 = f"{base_url}{link2.get('href')}"
+            new_links.append(link2)
+    else:
+        new_links.append(l)
+except Exception as e:
+    print(f"Request failed for {l}: {e}")
 
 # for x in new_links:
 try:
