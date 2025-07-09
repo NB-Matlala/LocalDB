@@ -92,24 +92,24 @@ def extractor(soup, url):
                 dining = value
             elif '#garages' in feat_icon:
                 garage = value
-            elif '#covered-parking' in feat_icon:
+            elif '#covered-parkiung' in feat_icon:
                 parking = value
             elif '#storeys' in feat_icon:
                 storeys = value
     except Exception as e:
         print(f"Error extracting property features list for {url}: {e}")
 
-    try:
-        script_tag = soup.find('script', string=re.compile(r'const serverVariables'))
-        if script_tag:
-            script_content = script_tag.string
-            script_data2 = re.search(r'const serverVariables\s*=\s*({.*?});', script_content, re.DOTALL).group(1)
-            json_data = json.loads(script_data2)
-            agent_name = json_data['bundleParams']['agencyInfo']['agencyName']
-            agent_url = json_data['bundleParams']['agencyInfo']['agencyPageUrl']
-            agent_url = f"{base_url}{agent_url}"
-    except Exception as e:
-        print(f"Error extracting agent information for {url}: {e}")
+    # try:
+    #     script_tag = soup.find('script', string=re.compile(r'const serverVariables'))
+    #     if script_tag:
+    #         script_content = script_tag.string
+    #         script_data2 = re.search(r'const serverVariables\s*=\s*({.*?});', script_content, re.DOTALL).group(1)
+    #         json_data = json.loads(script_data2)
+    #         agent_name = json_data['bundleParams']['agencyInfo']['agencyName']
+    #         agent_url = json_data['bundleParams']['agencyInfo']['agencyPageUrl']
+    #         agent_url = f"{base_url}{agent_url}"
+    # except Exception as e:
+    #     print(f"Error extracting agent information for {url}: {e}")
     
     current_datetime = datetime.now().strftime('%Y-%m-%d')
     
@@ -122,9 +122,11 @@ def extractor(soup, url):
 
 def getIds(soup):
     try:
-        script_data = soup.find('script', type='application/ld+json').string
-        json_data = json.loads(script_data)
-        url = json_data['url']
+        # script_data = soup.find('script', type='application/ld+json').string
+        # json_data = json.loads(script_data)
+        # url = json_data['url']
+        url = soup['href']
+
         prop_ID_match = re.search(r'/([^/]+)$', url)
         if prop_ID_match:
             return prop_ID_match.group(1)
@@ -146,39 +148,29 @@ for prov in range(5, 11):
     #     link = area.find('a')
     #     link = f"{base_url}{link.get('href')}"
     #     links.append(link)  
-    new_links = []
+    # new_links = []
     # for l in links:
+
+    x = f"{base_url}/for-sale/mpumalanga/{prov}"
     try:
-        res_in_text = session.get(f"{base_url}/for-sale/mpumalanga/{prov}")
-        inner = BeautifulSoup(res_in_text.content, 'html.parser')
-        ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
-        if ul2:
-            li_items2 = ul2.find_all('li', class_='region-content-holder__list')
-            for area2 in li_items2:
-                link2 = area2.find('a')
-                link2 = f"{base_url}{link2.get('href')}"
-                new_links.append(link2)
-        else:
-            new_links.append(f"{base_url}/for-sale/mpumalanga/{prov}")
+        land = session.get(x)
+        land_html = BeautifulSoup(land.content, 'html.parser')
+        pgs = getPages(land_html, x)
+
+        for p in range(1, pgs + 1):
+            home_page = session.get(f"{x}?pt=2&page={p}")
+            # home_page = session.get(f"{x}?page={p}")
+            soup = BeautifulSoup(home_page.content, 'html.parser')
+            prop_contain = soup.find_all('a', class_='featured-listing')
+            prop_contain.extend(soup.find_all('a', class_='listing-result'))
+            for x_page in prop_contain:
+                prop_id = getIds(x_page)
+                if prop_id:
+                    list_url = f"{base_url}/for-sale/something/something/something/{prop_id}" 
+                    queue.put({"url": list_url, "extract_function": extractor})
+
     except Exception as e:
-        print(f"Request failed for {base_url}/for-sale/mpumalanga/{prov}: {e}")
-    
-    for x in new_links:
-        try:
-            land = session.get(x)
-            land_html = BeautifulSoup(land.content, 'html.parser')
-            pgs = getPages(land_html, x)
-            for p in range(1, pgs + 1):
-                home_page = session.get(f"{x}?page={p}")
-                soup = BeautifulSoup(home_page.content, 'html.parser')
-                prop_contain = soup.find_all('a', class_='listing-result')
-                for x_page in prop_contain:
-                    prop_id = getIds(x_page)
-                    if prop_id:
-                        list_url = f"{base_url}/for-sale/something/something/something/{prop_id}"
-                        queue.put({"url": list_url, "extract_function": extractor})
-        except Exception as e:
-            print(f"Failed to process URL {x}: {e}")
+        print(f"Failed to process URL {x}: {e}")
 
 # Start threads
 num_threads = 10  # Adjust the number of threads based on your system's capabilities
