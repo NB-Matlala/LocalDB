@@ -51,10 +51,16 @@ def extractor(soup, url):
     # Initialize variables with default values
     prop_ID = erfSize = floor_size = rates = levy = None
     beds = baths = lounge = dining = garage = parking = storeys = None
-    agent_name = agent_url = None
+    agent_name = agent_url = price = street = locality = province = None
 
     try:
         prop_div = soup.find('div', class_='property-details')
+
+        price = soup.find('div', class_='listing-price-display__price').text.strip()
+        price = price.replace('\xa0', ' ')
+
+        street = soup.find('div', class_ ='listing-details__address').text.strip()
+
         lists = prop_div.find('ul', class_='property-details__list')
         features = lists.find_all('li')
         for feature in features:
@@ -73,7 +79,7 @@ def extractor(soup, url):
             elif '#levies' in icon:
                 levy = value.replace('\xa0', ' ')
     except Exception as e:
-        print(f"Error extracting property features for {url}: {e}")
+        print(f"Error extracting property details for {url}: {e}")
 
     try:
         prop_feat_div = soup.find('div', id='property-features-list')
@@ -99,27 +105,24 @@ def extractor(soup, url):
     except Exception as e:
         print(f"Error extracting property features list for {url}: {e}")
 
-    # try:
-    #     script_tag = soup.find('script', string=re.compile(r'const serverVariables'))
-    #     if script_tag:
-    #         script_content = script_tag.string
-    #         script_data2 = re.search(r'const serverVariables\s*=\s*({.*?});', script_content, re.DOTALL).group(1)
-    #         json_data = json.loads(script_data2)
-    #         agent_name = json_data['bundleParams']['agencyInfo']['agencyName']
-    #         agent_url = json_data['bundleParams']['agencyInfo']['agencyPageUrl']
-    #         agent_url = f"{base_url}{agent_url}"
-    # except Exception as e:
-    #     print(f"Error extracting agent information for {url}: {e}")
-    
+
+    try:
+        details_div = soup.find('div', class_='listing-details')
+        script_data = details_div.find('script', type='application/ld+json').string
+        json_data = json.loads(script_data)
+        locality = json_data['address']['addressLocality']
+        province = json_data['address']['addressRegion']
+    except Exception as e:
+        print(f"Error extracting property json regions {url}: {e}")
     current_datetime = datetime.now().strftime('%Y-%m-%d')
     
     return {
-        "Listing ID": prop_ID, "Erf Size": erfSize, "Property Type": prop_type, "Floor Size": floor_size,
+        "Listing ID": prop_ID, "Price": price, "Street": street, "Locality": locality, "Province": province,
+        "Erf Size": erfSize, "Property Type": prop_type, "Floor Size": floor_size,
         "Rates and taxes": rates, "Levies": levy, "Bedrooms": beds, "Bathrooms": baths, "Lounges": lounge,
         "Dining": dining, "Garages": garage, "Covered Parking": parking, "Storeys": storeys, "Agent Name": agent_name,
         "Agent Url": agent_url, "Time_stamp":current_datetime
     }
-
 def getIds(soup):
     try:
         # script_data = soup.find('script', type='application/ld+json').string
