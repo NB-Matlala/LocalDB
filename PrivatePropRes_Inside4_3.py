@@ -59,10 +59,16 @@ def extractor(soup, url):
     # Initialize variables with default values
     prop_ID = erfSize = floor_size = rates = levy = None
     beds = baths = lounge = dining = garage = parking = storeys = None
-    agent_name = agent_url = None
+    agent_name = agent_url = price = street = locality = province = None
 
     try:
         prop_div = soup.find('div', class_='property-details')
+
+        price = soup.find('div', class_='listing-price-display__price').text.strip()
+        price = price.replace('\xa0', ' ')
+
+        street = soup.find('div', class_ ='listing-details__address').text.strip()
+
         lists = prop_div.find('ul', class_='property-details__list')
         features = lists.find_all('li')
         for feature in features:
@@ -107,28 +113,24 @@ def extractor(soup, url):
     except Exception as e:
         print(f"Error extracting property features list for {url}: {e}")
 
-    # try:
-    #     driver.get(url)  
-    #     html_content = driver.page_source
-    #     # Use BeautifulSoup to parse the page
-    #     soup = BeautifulSoup(html_content, 'html.parser')
 
-    #     link = soup.find('a', class_='VjDc4nmKFmlUBYyyILgD').get('href')
-    #     agent_name = soup.find('a', class_='VjDc4nmKFmlUBYyyILgD').get('title')
-
-    #     agent_url = f"{base_url}{link}"
-    # except Exception as e:
-    #     print(f"Error extracting agent information for {url}: {e}")
-
+    try:
+        details_div = soup.find('div', class_='listing-details')
+        script_data = details_div.find('script', type='application/ld+json').string
+        json_data = json.loads(script_data)
+        locality = json_data['address']['addressLocality']
+        province = json_data['address']['addressRegion']
+    except Exception as e:
+        print(f"Error extracting property json regions {url}: {e}")
     current_datetime = datetime.now().strftime('%Y-%m-%d')
     
     return {
-        "Listing ID": prop_ID, "Erf Size": erfSize, "Property Type": prop_type, "Floor Size": floor_size,
+        "Listing ID": prop_ID, "Price": price, "Street": street, "Locality": locality, "Province": province,
+        "Erf Size": erfSize, "Property Type": prop_type, "Floor Size": floor_size,
         "Rates and taxes": rates, "Levies": levy, "Bedrooms": beds, "Bathrooms": baths, "Lounges": lounge,
         "Dining": dining, "Garages": garage, "Covered Parking": parking, "Storeys": storeys, "Agent Name": agent_name,
         "Agent Url": agent_url, "Time_stamp":current_datetime
     }
-
 def getIds(soup):
     try:
         # script_data = soup.find('script', type='application/ld+json').string
