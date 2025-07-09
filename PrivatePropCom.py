@@ -845,56 +845,37 @@ def getIds(soup):
         print(f"Error extracting ID from {soup}: {e}")
     return None
 
-def extractor(soup, url): # extracts from created urls
-    try:
-        prop_ID = None
-        erfSize = None
-        floor_size = None
-        rates = None
-        levy = None
+def extractor(soup, url): # extracts from created urls    prop_ID = erfSize = floor_size = rates = levy = None
+    beds = baths = lounge = dining = garage = parking = storeys = None
+    agent_name = agent_url = price = street = locality = province = None
 
+    try:
         prop_div = soup.find('div', class_='property-details')
+
+        price = soup.find('div', class_='listing-price-display__price').text.strip()
+        price = price.replace('\xa0', ' ')
+
+        street = soup.find('div', class_ ='listing-details__address').text.strip()
+
         lists = prop_div.find('ul', class_='property-details__list')
         features = lists.find_all('li')
         for feature in features:
             icon = feature.find('svg').find('use').get('xlink:href')
+            value = feature.find('span', class_='property-details__value').text.strip()
             if '#listing-alt' in icon:
-                prop_ID = feature.find('span', class_='property-details__value').text.strip()
-
+                prop_ID = value
             elif '#property-type' in icon:
-                prop_type = feature.find('span', class_='property-details__value').text.strip()
-
+                prop_type = value
             elif '#erf-size' in icon:
-                erfSize = feature.find('span', class_='property-details__value').text.strip()
-                erfSize = erfSize.replace('\xa0', ' ')
-
+                erfSize = value.replace('\xa0', ' ')
             elif '#property-size' in icon:
-                floor_size = feature.find('span', class_='property-details__value').text.strip()
-                floor_size = floor_size.replace('\xa0', ' ')
-
+                floor_size = value.replace('\xa0', ' ')
             elif '#rates' in icon:
-                rates = feature.find('span', class_='property-details__value').text.strip()
-                rates = rates.replace('\xa0', ' ')
-
+                rates = value.replace('\xa0', ' ')
             elif '#levies' in icon:
-                levy = feature.find('span', class_='property-details__value').text.strip()
-                levy = levy.replace('\xa0', ' ')
-
-    except KeyError:
-        prop_ID = None
-        erfSize = None
-        prop_type = None
-        floor_size = None
-        rates = None
-        levy = None
-
-    beds = None
-    baths = None
-    lounge = None
-    dining = None
-    garage = None
-    parking = None
-    storeys = None
+                levy = value.replace('\xa0', ' ')
+    except Exception as e:
+        print(f"Error extracting property details for {url}: {e}")
 
     try:
         prop_feat_div = soup.find('div', id='property-features-list')
@@ -902,59 +883,47 @@ def extractor(soup, url): # extracts from created urls
         feats = lists_feat.find_all('li')
         for feat in feats:
             feat_icon = feat.find('svg').find('use').get('xlink:href')
+            value = feat.find('span', class_='property-features__value').text.strip()
             if '#bedrooms' in feat_icon:
-                beds = feat.find('span',class_='property-features__value').text.strip()
+                beds = value
             elif '#bathroom' in feat_icon:
-                baths = feat.find('span',class_='property-features__value').text.strip()
+                baths = value
             elif '#lounges' in feat_icon:
-                lounge = feat.find('span',class_='property-features__value').text.strip()
+                lounge = value
             elif '#dining' in feat_icon:
-                dining = feat.find('span',class_='property-features__value').text.strip()
+                dining = value
             elif '#garages' in feat_icon:
-                garage = feat.find('span',class_='property-features__value').text.strip()
+                garage = value
             elif '#covered-parkiung' in feat_icon:
-                parking = feat.find('span',class_='property-features__value').text.strip()
+                parking = value
             elif '#storeys' in feat_icon:
-                storeys = feat.find('span',class_='property-features__value').text.strip()
+                storeys = value
+    except Exception as e:
+        print(f"Error extracting property features list for {url}: {e}")
 
-    except (AttributeError, KeyError) as f:
-        print(f"Property Features Not Found: for {url}")
-        beds = None
-        baths = None
-        lounge = None
-        dining = None
-        garage = None
-        parking = None
-        storeys = None
 
-    agent_name = None
-    agent_url = None
-
-    # try:
-    #     driver.get(url)  
-    #     html_content = driver.page_source
-    #     # Use BeautifulSoup to parse the page
-    #     soup = BeautifulSoup(html_content, 'html.parser')
-
-    #     link = soup.find('a', class_='VjDc4nmKFmlUBYyyILgD').get('href')
-    #     agent_name = soup.find('a', class_='VjDc4nmKFmlUBYyyILgD').get('title')
-
-    #     agent_url = f"{base_url}{link}"
-    # except (AttributeError, KeyError) as e:
-    #     agent_name = None
-    #     agent_url = None
-
+    try:
+        details_div = soup.find('div', class_='listing-details')
+        script_data = details_div.find('script', type='application/ld+json').string
+        json_data = json.loads(script_data)
+        locality = json_data['address']['addressLocality']
+        province = json_data['address']['addressRegion']
+    except Exception as e:
+        print(f"Error extracting property json regions {url}: {e}")
     current_datetime = datetime.now().strftime('%Y-%m-%d')
-
+    
     return {
-        "Listing ID": prop_ID, "Erf Size": erfSize, "Property Type": prop_type, "Floor Size": floor_size,
+        "Listing ID": prop_ID, "Price": price, "Street": street, "Locality": locality, "Province": province,
+        "Erf Size": erfSize, "Property Type": prop_type, "Floor Size": floor_size,
         "Rates and taxes": rates, "Levies": levy, "Bedrooms": beds, "Bathrooms": baths, "Lounges": lounge,
         "Dining": dining, "Garages": garage, "Covered Parking": parking, "Storeys": storeys, "Agent Name": agent_name,
-        "Agent Url": agent_url, "Time_stamp": current_datetime}
+        "Agent Url": agent_url, "Time_stamp":current_datetime
+    }
 
 ######################################Functions##########################################################
 async def main2():
-    fieldnames2 = ['Listing ID', 'Erf Size', 'Property Type', 'Floor Size', 'Rates and taxes', 'Levies',
+    fieldnames2 = ['Listing ID', 'Price', 'Street', 'Locality', 'Province',
+                   'Erf Size', 'Property Type', 'Floor Size', 'Rates and taxes', 'Levies',
                   'Bedrooms', 'Bathrooms', 'Lounges', 'Dining', 'Garages', 'Covered Parking', 'Storeys',
                   'Agent Name', 'Agent Url', 'Time_stamp']
     filename2 = "PrivatePropRes(Inside)5.csv"
