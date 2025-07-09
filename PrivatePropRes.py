@@ -520,157 +520,158 @@ async def main():
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            new_links = []
-            async def process_province(prov):
-                # response_text = await fetch(session, f"{base_url}/for-sale/mpumalanga/{prov}", semaphore)
-                # home_page = BeautifulSoup(response_text, 'html.parser')
-                # link = f"{base_url}/for-sale/mpumalanga/{prov}"
-                new_links.extend(f"{base_url}/for-sale/mpumalanga/{prov}")
+            
+            # async def process_province(prov):
+            #     # response_text = await fetch(session, f"{base_url}/for-sale/mpumalanga/{prov}", semaphore)
+            #     # home_page = BeautifulSoup(response_text, 'html.parser')
+            #     # link = f"{base_url}/for-sale/mpumalanga/{prov}"
+            #     new_links
+            #     new_links.extend(f"{base_url}/for-sale/mpumalanga/{prov}")
+            #     # links = []
+            #     # ul = home_page.find('ul', class_='region-content-holder__unordered-list')
+            #     # li_items = ul.find_all('li')
+            #     # for area in li_items:
+            #     #     link = area.find('a')
+            #     #     link = f"{base_url}{link.get('href')}"
+            #     #     links.append(link)
 
-                # links = []
-                # ul = home_page.find('ul', class_='region-content-holder__unordered-list')
-                # li_items = ul.find_all('li')
-                # for area in li_items:
-                #     link = area.find('a')
-                #     link = f"{base_url}{link.get('href')}"
-                #     links.append(link)
+            #     # new_links = []
+            #     # for l in links:
+            #     #     try:
+            #     #         res_in_text = await fetch(session, f"{l}", semaphore)
+            #     #         inner = BeautifulSoup(res_in_text, 'html.parser')
+            #     #         ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
+            #     #         if ul2:
+            #     #             li_items2 = ul2.find_all('li', class_='region-content-holder__list')
+            #     #             for area2 in li_items2:
+            #     #                 link2 = area2.find('a')
+            #     #                 link2 = f"{base_url}{link2.get('href')}"
+            #     #                 new_links.append(link2)
+            #     #         else:
+            #     #             new_links.append(l)
+            #     #     except aiohttp.ClientError as e:
+            #     #         print(f"Request failed for {l}: {e}")
 
-                # new_links = []
-                # for l in links:
-                #     try:
-                #         res_in_text = await fetch(session, f"{l}", semaphore)
-                #         inner = BeautifulSoup(res_in_text, 'html.parser')
-                #         ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
-                #         if ul2:
-                #             li_items2 = ul2.find_all('li', class_='region-content-holder__list')
-                #             for area2 in li_items2:
-                #                 link2 = area2.find('a')
-                #                 link2 = f"{base_url}{link2.get('href')}"
-                #                 new_links.append(link2)
-                #         else:
-                #             new_links.append(l)
-                #     except aiohttp.ClientError as e:
-                #         print(f"Request failed for {l}: {e}")
+            async def process_link10(x):
+                try:
+                    x = f"{x}?pt=10"
+                    x_response_text = await fetch(session, x, semaphore)
+                    x_page = BeautifulSoup(x_response_text, 'html.parser')
+                    num_pages = getPages(x_page, x)
 
-                async def process_link10(x):
-                    try:
-                        x = f"{x}?pt=10"
-                        x_response_text = await fetch(session, x, semaphore)
-                        x_page = BeautifulSoup(x_response_text, 'html.parser')
-                        num_pages = getPages(x_page, x)
+                    for s in range(1, num_pages + 1):
+                        if s % 25 == 0:
+                            sleep_duration = random.randint(40, 60)
+                            await asyncio.sleep(sleep_duration)
 
-                        for s in range(1, num_pages + 1):
-                            if s % 25 == 0:
-                                sleep_duration = random.randint(40, 60)
-                                await asyncio.sleep(sleep_duration)
+                        prop_page_text = await fetch(session, f"{x}&page={s}", semaphore)
+                        x_prop = BeautifulSoup(prop_page_text, 'html.parser')
+                        prop_contain = x_prop.find_all('a', class_='featured-listing')
+                        prop_contain.extend(x_prop.find_all('a', class_='listing-result'))
+                        for prop in prop_contain:
+                            data = cluster_extractor(prop)
+                            writer.writerow(data)
+                except Exception as e:
+                    print(f"An error occurred while processing link {x}: {e}")
 
-                            prop_page_text = await fetch(session, f"{x}&page={s}", semaphore)
-                            x_prop = BeautifulSoup(prop_page_text, 'html.parser')
-                            prop_contain = x_prop.find_all('a', class_='featured-listing')
-                            prop_contain.extend(x_prop.find_all('a', class_='listing-result'))
-                            for prop in prop_contain:
-                                data = cluster_extractor(prop)
-                                writer.writerow(data)
-                    except Exception as e:
-                        print(f"An error occurred while processing link {x}: {e}")
+            async def process_link5(x):
+                try:
+                    x = f"{x}?pt=5"
+                    x_response_text = await fetch(session, x, semaphore)
+                    x_page = BeautifulSoup(x_response_text, 'html.parser')
+                    num_pages = getPages(x_page, x)
 
-                async def process_link5(x):
-                    try:
-                        x = f"{x}?pt=5"
-                        x_response_text = await fetch(session, x, semaphore)
-                        x_page = BeautifulSoup(x_response_text, 'html.parser')
-                        num_pages = getPages(x_page, x)
+                    for s in range(1, num_pages + 1):
+                        if s % 25 == 0:
+                            sleep_duration = random.randint(50, 60)
+                            await asyncio.sleep(sleep_duration)
 
-                        for s in range(1, num_pages + 1):
-                            if s % 25 == 0:
-                                sleep_duration = random.randint(50, 60)
-                                await asyncio.sleep(sleep_duration)
+                        prop_page_text = await fetch(session, f"{x}&page={s}", semaphore)
+                        x_prop = BeautifulSoup(prop_page_text, 'html.parser')
+                        prop_contain = x_prop.find_all('a', class_='featured-listing')
+                        prop_contain.extend(x_prop.find_all('a', class_='listing-result'))
+                        for prop in prop_contain:
+                            data = house_extractor(prop)
+                            writer.writerow(data)
+                except Exception as e:
+                    print(f"An error occurred while processing link {x}: {e}")
 
-                            prop_page_text = await fetch(session, f"{x}&page={s}", semaphore)
-                            x_prop = BeautifulSoup(prop_page_text, 'html.parser')
-                            prop_contain = x_prop.find_all('a', class_='featured-listing')
-                            prop_contain.extend(x_prop.find_all('a', class_='listing-result'))
-                            for prop in prop_contain:
-                                data = house_extractor(prop)
-                                writer.writerow(data)
-                    except Exception as e:
-                        print(f"An error occurred while processing link {x}: {e}")
+            async def process_link2(x):
+                try:
+                    x = f"{x}?pt=2"
+                    x_response_text = await fetch(session, x, semaphore)
+                    x_page = BeautifulSoup(x_response_text, 'html.parser')
+                    num_pages = getPages(x_page, x)
 
-                async def process_link2(x):
-                    try:
-                        x = f"{x}?pt=2"
-                        x_response_text = await fetch(session, x, semaphore)
-                        x_page = BeautifulSoup(x_response_text, 'html.parser')
-                        num_pages = getPages(x_page, x)
+                    for s in range(1, num_pages + 1):
+                        if s % 25 == 0:
+                            sleep_duration = random.randint(40, 60)
+                            await asyncio.sleep(sleep_duration)
 
-                        for s in range(1, num_pages + 1):
-                            if s % 25 == 0:
-                                sleep_duration = random.randint(40, 60)
-                                await asyncio.sleep(sleep_duration)
+                        prop_page_text = await fetch(session, f"{x}&page={s}", semaphore)
+                        x_prop = BeautifulSoup(prop_page_text, 'html.parser')
+                        prop_contain = x_prop.find_all('a', class_='featured-listing')
+                        prop_contain.extend(x_prop.find_all('a', class_='listing-result'))
 
-                            prop_page_text = await fetch(session, f"{x}&page={s}", semaphore)
-                            x_prop = BeautifulSoup(prop_page_text, 'html.parser')
-                            prop_contain = x_prop.find_all('a', class_='featured-listing')
-                            prop_contain.extend(x_prop.find_all('a', class_='listing-result'))
+                        for prop in prop_contain:
+                            data = apartment_extractor(prop)
+                            writer.writerow(data)
+                except Exception as e:
+                    print(f"An error occurred while processing link {x}: {e}")
 
-                            for prop in prop_contain:
-                                data = apartment_extractor(prop)
-                                writer.writerow(data)
-                    except Exception as e:
-                        print(f"An error occurred while processing link {x}: {e}")
+            async def process_link7(x):
+                try:
+                    x = f"{x}?pt=7"
+                    x_response_text = await fetch(session, x, semaphore)
+                    x_page = BeautifulSoup(x_response_text, 'html.parser')
+                    num_pages = getPages(x_page, x)
 
-                async def process_link7(x):
-                    try:
-                        x = f"{x}?pt=7"
-                        x_response_text = await fetch(session, x, semaphore)
-                        x_page = BeautifulSoup(x_response_text, 'html.parser')
-                        num_pages = getPages(x_page, x)
+                    for s in range(1, num_pages + 1):
+                        if s % 25 == 0:
+                            sleep_duration = random.randint(40, 60)
+                            await asyncio.sleep(sleep_duration)
 
-                        for s in range(1, num_pages + 1):
-                            if s % 25 == 0:
-                                sleep_duration = random.randint(40, 60)
-                                await asyncio.sleep(sleep_duration)
+                        prop_page_text = await fetch(session, f"{x}&page={s}", semaphore)
+                        x_prop = BeautifulSoup(prop_page_text, 'html.parser')
+                        prop_contain = x_prop.find_all('a', class_='featured-listing')
+                        prop_contain.extend(x_prop.find_all('a', class_='listing-result'))
+                        for prop in prop_contain:
+                            data = land_extractor(prop)
+                            writer.writerow(data)
+                except Exception as e:
+                    print(f"An error occurred while processing link {x}: {e}")
 
-                            prop_page_text = await fetch(session, f"{x}&page={s}", semaphore)
-                            x_prop = BeautifulSoup(prop_page_text, 'html.parser')
-                            prop_contain = x_prop.find_all('a', class_='featured-listing')
-                            prop_contain.extend(x_prop.find_all('a', class_='listing-result'))
-                            for prop in prop_contain:
-                                data = land_extractor(prop)
-                                writer.writerow(data)
-                    except Exception as e:
-                        print(f"An error occurred while processing link {x}: {e}")
+            async def process_link1(x):
+                try:
+                    x = f"{x}?pt=1"
+                    x_response_text = await fetch(session, x, semaphore)
+                    x_page = BeautifulSoup(x_response_text, 'html.parser')
+                    num_pages = getPages(x_page, x)
 
-                async def process_link1(x):
-                    try:
-                        x = f"{x}?pt=1"
-                        x_response_text = await fetch(session, x, semaphore)
-                        x_page = BeautifulSoup(x_response_text, 'html.parser')
-                        num_pages = getPages(x_page, x)
+                    for s in range(1, num_pages + 1):
+                        if s % 25 == 0:
+                            sleep_duration = random.randint(40, 60)
+                            await asyncio.sleep(sleep_duration)
 
-                        for s in range(1, num_pages + 1):
-                            if s % 25 == 0:
-                                sleep_duration = random.randint(40, 60)
-                                await asyncio.sleep(sleep_duration)
+                        prop_page_text = await fetch(session, f"{x}&page={s}", semaphore)
+                        x_prop = BeautifulSoup(prop_page_text, 'html.parser')
+                        prop_contain = x_prop.find_all('a', class_='featured-listing')
+                        prop_contain.extend(x_prop.find_all('a', class_='listing-result'))
 
-                            prop_page_text = await fetch(session, f"{x}&page={s}", semaphore)
-                            x_prop = BeautifulSoup(prop_page_text, 'html.parser')
-                            prop_contain = x_prop.find_all('a', class_='featured-listing')
-                            prop_contain.extend(x_prop.find_all('a', class_='listing-result'))
+                        for prop in prop_contain:
+                            data = farm_extractor(prop)
+                            writer.writerow(data)
+                except Exception as e:
+                    print(f"An error occurred while processing link {x}: {e}")
 
-                            for prop in prop_contain:
-                                data = farm_extractor(prop)
-                                writer.writerow(data)
-                    except Exception as e:
-                        print(f"An error occurred while processing link {x}: {e}")
+            tasks = []
+            for x in range(2,11):
+                link = f"{base_url}/for-sale/mpumalanga/{x}"
+                tasks.extend([process_link10(link), process_link5(link), process_link2(link), process_link1(link), process_link7(link)])
+            
+            await asyncio.gather(*tasks)
 
-                tasks = []
-                for x in new_links:
-                    tasks.extend([process_link10(x), process_link5(x), process_link2(x), process_link1(x), process_link7(x)])
-                
-                await asyncio.gather(*tasks)
-
-            await asyncio.gather(*(process_province(prov) for prov in range(2, 11)))
+            # await asyncio.gather(*(process_province(prov) for prov in range(2, 11)))
             end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             print(f"Start Time: {start_time}")
             print(f"End Time: {end_time}")
@@ -688,7 +689,5 @@ async def main():
             print(f"File uploaded to Azure Blob Storage: {blob_name}")
 
             
-
-
 # Running the main coroutine
 asyncio.run(main())
