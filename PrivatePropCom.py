@@ -832,19 +832,18 @@ def getPages2(soupPage, url):
         return 0
 
 def getIds(soup):
-    script_data = soup.find('script', type='application/ld+json').string
-    json_data = json.loads(script_data)
     try:
-        url = json_data['url']
+        # script_data = soup.find('script', type='application/ld+json').string
+        # json_data = json.loads(script_data)
+        # url = json_data['url']
+        url = soup['href']
+
         prop_ID_match = re.search(r'/([^/]+)$', url)
         if prop_ID_match:
-            prop_ID = prop_ID_match.group(1)
-        else:
-            prop_ID = None
-    except KeyError:
-        prop_ID = None
-
-    return prop_ID
+            return prop_ID_match.group(1)
+    except Exception as e:
+        print(f"Error extracting ID from {soup}: {e}")
+    return None
 
 def extractor(soup, url): # extracts from created urls
     try:
@@ -981,21 +980,22 @@ async def main2():
                 #     links.append(link)
 
                 new_links = []
+                new_links.append(f"{base_url}/commercial-sales/gauteng/{prov}")
                 # for l in links:
-                try:
-                    res_in_text = await fetch2(session2, f"{base_url}/commercial-sales/gauteng/{prov}", semaphore2)
-                    inner = BeautifulSoup(res_in_text, 'html.parser')
-                    ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
-                    if ul2:
-                        li_items2 = ul2.find_all('li', class_='region-content-holder__list')
-                        for area2 in li_items2:
-                            link2 = area2.find('a')
-                            link2 = f"{base_url}{link2.get('href')}"
-                            new_links.append(link2)
-                    else:
-                        new_links.append(f"{base_url}/commercial-sales/gauteng/{prov}")
-                except aiohttp.ClientError as e:
-                    print(f"Request failed for {base_url}/commercial-sales/gauteng/{prov}: {e}")
+                # try:
+                #     res_in_text = await fetch2(session2, f"{base_url}/commercial-sales/gauteng/{prov}", semaphore2)
+                #     inner = BeautifulSoup(res_in_text, 'html.parser')
+                #     ul2 = inner.find('ul', class_='region-content-holder__unordered-list')
+                #     if ul2:
+                #         li_items2 = ul2.find_all('li', class_='region-content-holder__list')
+                #         for area2 in li_items2:
+                #             link2 = area2.find('a')
+                #             link2 = f"{base_url}{link2.get('href')}"
+                #             new_links.append(link2)
+                #     else:
+                #         new_links.append(f"{base_url}/commercial-sales/gauteng/{prov}")
+                # except aiohttp.ClientError as e:
+                #     print(f"Request failed for {base_url}/commercial-sales/gauteng/{prov}: {e}")
 
                 async def process_link(x):
                     try:
@@ -1010,7 +1010,9 @@ async def main2():
 
                             prop_page_text = await fetch2(session2, f"{x}?page={s}", semaphore2)
                             x_prop = BeautifulSoup(prop_page_text, 'html.parser')
-                            prop_contain = x_prop.find_all('a', class_='listing-result')
+                            prop_contain = x_prop.find_all('a', class_='featured-listing')
+                            prop_contain.extend(x_prop.find_all('a', class_='listing-result'))
+
                             for prop in prop_contain:
                                 data = getIds(prop)
                                 ids.append(data)
