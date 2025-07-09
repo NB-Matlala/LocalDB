@@ -515,13 +515,12 @@ async def main():
                   'Agent Name', 'Agent Url', 'Time_stamp']
     filename = "PrivatePropRes.csv"
     semaphore = asyncio.Semaphore(500)
-    new_links = []
     async with aiohttp.ClientSession() as session:
         with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
+            new_links = []
             async def process_province(prov):
                 # response_text = await fetch(session, f"{base_url}/for-sale/mpumalanga/{prov}", semaphore)
                 # home_page = BeautifulSoup(response_text, 'html.parser')
