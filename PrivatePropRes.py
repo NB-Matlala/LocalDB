@@ -568,7 +568,8 @@ async def main():
 
                             prop_page_text = await fetch(session, f"{x}&page={s}", semaphore)
                             x_prop = BeautifulSoup(prop_page_text, 'html.parser')
-                            prop_contain = x_prop.find_all('a', class_='listing-result')
+                            prop_contain = x_prop.find_all('a', class_='featured-listing')
+                            prop_contain.extend(x_prop.find_all('a', class_='listing-result'))
                             for prop in prop_contain:
                                 data = cluster_extractor(prop)
                                 writer.writerow(data)
@@ -589,7 +590,8 @@ async def main():
 
                             prop_page_text = await fetch(session, f"{x}&page={s}", semaphore)
                             x_prop = BeautifulSoup(prop_page_text, 'html.parser')
-                            prop_contain = x_prop.find_all('a', class_='listing-result')
+                            prop_contain = x_prop.find_all('a', class_='featured-listing')
+                            prop_contain.extend(x_prop.find_all('a', class_='listing-result'))
                             for prop in prop_contain:
                                 data = house_extractor(prop)
                                 writer.writerow(data)
@@ -610,7 +612,9 @@ async def main():
 
                             prop_page_text = await fetch(session, f"{x}&page={s}", semaphore)
                             x_prop = BeautifulSoup(prop_page_text, 'html.parser')
-                            prop_contain = x_prop.find_all('a', class_='listing-result')
+                            prop_contain = x_prop.find_all('a', class_='featured-listing')
+                            prop_contain.extend(x_prop.find_all('a', class_='listing-result'))
+
                             for prop in prop_contain:
                                 data = apartment_extractor(prop)
                                 writer.writerow(data)
@@ -631,7 +635,8 @@ async def main():
 
                             prop_page_text = await fetch(session, f"{x}&page={s}", semaphore)
                             x_prop = BeautifulSoup(prop_page_text, 'html.parser')
-                            prop_contain = x_prop.find_all('a', class_='listing-result')
+                            prop_contain = x_prop.find_all('a', class_='featured-listing')
+                            prop_contain.extend(x_prop.find_all('a', class_='listing-result'))
                             for prop in prop_contain:
                                 data = land_extractor(prop)
                                 writer.writerow(data)
@@ -652,7 +657,9 @@ async def main():
 
                             prop_page_text = await fetch(session, f"{x}&page={s}", semaphore)
                             x_prop = BeautifulSoup(prop_page_text, 'html.parser')
-                            prop_contain = x_prop.find_all('a', class_='listing-result')
+                            prop_contain = x_prop.find_all('a', class_='featured-listing')
+                            prop_contain.extend(x_prop.find_all('a', class_='listing-result'))
+
                             for prop in prop_contain:
                                 data = farm_extractor(prop)
                                 writer.writerow(data)
@@ -687,5 +694,3 @@ async def main():
 
 # Running the main coroutine
 asyncio.run(main())
-
-
