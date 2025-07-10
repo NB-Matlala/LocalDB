@@ -621,18 +621,6 @@ async def main():
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            provinces = {
-                    'kwazulu-natal': '2',
-                    'gauteng': '3',
-                    'western-cape': '4',
-                    'northern-cape': '5',
-                    'free-state': '6',
-                    'eastern-cape': '7',
-                    'Limpopo': '8',
-                    'north-west': '9',
-                    'mpumalanga': '10'
-                }
-
 
             async def process_province(prov,p_num):
                 new_links = []
@@ -798,7 +786,17 @@ async def main():
                     tasks.extend([process_link0(x), process_link6(x), process_link9(x), process_link8(x), process_link4(x), process_link7(x)])
 
                 await asyncio.gather(*tasks)
-
+            provinces = {
+                    'kwazulu-natal': '2',
+                    'gauteng': '3',
+                    'western-cape': '4',
+                    'northern-cape': '5',
+                    'free-state': '6',
+                    'eastern-cape': '7',
+                    'Limpopo': '8',
+                    'north-west': '9',
+                    'mpumalanga': '10'
+                }
             await asyncio.gather(*(process_province(prov,p_num) for prov,p_num in provinces.items())
             end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             print(f"Start Time: {start_time}")
@@ -947,17 +945,6 @@ async def main2():
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames2)
             writer.writeheader()
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            provinces = {
-                    'kwazulu-natal': '2',
-                    'gauteng': '3',
-                    'western-cape': '4',
-                    'northern-cape': '5',
-                    'free-state': '6',
-                    'eastern-cape': '7',
-                    'Limpopo': '8',
-                    'north-west': '9',
-                    'mpumalanga': '10'
-                }
 
             async def process_province2(prov,p_num):
                 # response_text = await fetch2(session2, f"{base_url}/commercial-sales/gauteng/{prov}", semaphore2)
@@ -1034,7 +1021,17 @@ async def main2():
 
                 tasks = [process_id(list_id) for list_id in ids]
                 await asyncio.gather(*tasks)
-            
+            provinces = {
+                    'kwazulu-natal': '2',
+                    'gauteng': '3',
+                    'western-cape': '4',
+                    'northern-cape': '5',
+                    'free-state': '6',
+                    'eastern-cape': '7',
+                    'Limpopo': '8',
+                    'north-west': '9',
+                    'mpumalanga': '10'
+                }
             await asyncio.gather(*(process_province2(prov,p_num) for prov,p_num in provinces.items())
             await process_ids()
             end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
