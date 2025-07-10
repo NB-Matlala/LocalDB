@@ -169,7 +169,7 @@ for prov,p_num in provinces.items():
         pgs = getPages(land_html, x)
 
         for p in range(1, pgs + 1):
-            home_page = session.get(f"{x}?pt=2&page={p}")
+            home_page = session.get(f"{x}?page={p}")
             # home_page = session.get(f"{x}?page={p}")
             soup = BeautifulSoup(home_page.content, 'html.parser')
             prop_contain = soup.find_all('a', class_='featured-listing')
