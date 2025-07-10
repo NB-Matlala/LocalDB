@@ -140,8 +140,16 @@ def getIds(soup):
 # Initialize thread queue and results list
 queue = Queue()
 results = []
+provinces = {
+    'northern-cape': '5',
+    'free-state': '6',
+    'eastern-cape': '7',
+    'Limpopo': '8',
+    'north-west': '9',
+    'mpumalanga': '10'
+}
 
-for prov in range(5, 11):
+for prov,p_num in provinces.items():  
     # response_text = session.get(f"{base_url}/for-sale/mpumalanga/{prov}")
     # home_page = BeautifulSoup(response_text.content, 'html.parser')
     # links = []
@@ -154,7 +162,7 @@ for prov in range(5, 11):
     # new_links = []
     # for l in links:
 
-    x = f"{base_url}/for-sale/mpumalanga/{prov}"
+    x = f"{base_url}/for-sale/{prov}/{p_num}"
     try:
         land = session.get(x)
         land_html = BeautifulSoup(land.content, 'html.parser')
