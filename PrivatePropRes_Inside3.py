@@ -185,23 +185,28 @@ results = []
 #     except Exception as e:
 #         print(f"Failed to process URL {x}: {e}")
 
-x = f'{base_url}/for-sale/mpumalanga/4'
+provinces = {
+    'western-cape': '4'
+}
 
-land = session.get(x)
-land_html = BeautifulSoup(land.content, 'html.parser')
-pgs = getPages(land_html, x)
-
-for p in range(1, pgs + 1):
-    home_page = session.get(f"{x}?pt=2&page={p}")
-    # home_page = session.get(f"{x}?page={p}")
-    soup = BeautifulSoup(home_page.content, 'html.parser')
-    prop_contain = soup.find_all('a', class_='featured-listing')
-    prop_contain.extend(soup.find_all('a', class_='listing-result'))
-    for x_page in prop_contain:
-        prop_id = getIds(x_page)
-        if prop_id:
-            list_url = f"{base_url}/for-sale/something/something/something/{prop_id}" 
-            queue.put({"url": list_url, "extract_function": extractor})
+for prov,p_num in provinces.items():  #range(2, 11)
+    x = f"{base_url}/for-sale/{prov}/{p_num}"
+    
+    land = session.get(x)
+    land_html = BeautifulSoup(land.content, 'html.parser')
+    pgs = getPages(land_html, x)
+    
+    for p in range(1, pgs + 1):
+        home_page = session.get(f"{x}?pt=2&page={p}")
+        # home_page = session.get(f"{x}?page={p}")
+        soup = BeautifulSoup(home_page.content, 'html.parser')
+        prop_contain = soup.find_all('a', class_='featured-listing')
+        prop_contain.extend(soup.find_all('a', class_='listing-result'))
+        for x_page in prop_contain:
+            prop_id = getIds(x_page)
+            if prop_id:
+                list_url = f"{base_url}/for-sale/something/something/something/{prop_id}" 
+                queue.put({"url": list_url, "extract_function": extractor})
 
 
 # Start threads
