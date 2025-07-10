@@ -797,7 +797,7 @@ async def main():
                     'north-west': '9',
                     'mpumalanga': '10'
                 }
-            await asyncio.gather(*(process_province(prov,p_num) for prov,p_num in provinces.items())
+            await asyncio.gather(*(process_province(prov,p_num) for prov,p_num in provinces.items()))
             end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             print(f"Start Time: {start_time}")
             print(f"End Time: {end_time}")
@@ -1032,7 +1032,7 @@ async def main2():
                     'north-west': '9',
                     'mpumalanga': '10'
                 }
-            await asyncio.gather(*(process_province2(prov,p_num) for prov,p_num in provinces.items())
+            await asyncio.gather(*(process_province2(prov,p_num) for prov,p_num in provinces.items()))
             await process_ids()
             end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             print(f"Start Time: {start_time}")
