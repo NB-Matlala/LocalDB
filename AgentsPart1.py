@@ -83,9 +83,18 @@ def getDealers(soup):
 queue = Queue()
 results = []
 
-for prov in range(2, 6):  #range(5, 11)
-    x = f"{base_url}/for-sale/mpumalanga/{prov}"
+# for prov in range(2, 6):  #range(5, 11)
+#     x = f"{base_url}/for-sale/mpumalanga/{prov}"
+provinces = {
+    'kwazulu-natal': '2',
+    'gauteng': '3',
+    'western-cape': '4',
+    'northern-cape': '5'
+}
 
+for prov,p_num in provinces.items():  
+
+    x = f"{base_url}/for-sale/{prov}/{p_num}"
     land = session.get(x)
     land_html = BeautifulSoup(land.content, 'html.parser')
     pgs = getPages(land_html, x)
