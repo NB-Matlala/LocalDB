@@ -11,9 +11,9 @@ on:
       - completed
 
 jobs:
-  followupjob3:
+  followupjob4:
     runs-on: ubuntu-latest
-    concurrency: multirunP1
+    concurrency: multidrunP2
     env:
       BASE_URL: ${{ vars.BASE_URL }}
       CON_STR: ${{ vars.CON_STR }}
