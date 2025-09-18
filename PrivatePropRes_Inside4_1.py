@@ -8,6 +8,7 @@ import threading
 from queue import Queue
 from datetime import datetime
 import csv
+import gizp
 from azure.storage.blob import BlobClient
 import os
 
