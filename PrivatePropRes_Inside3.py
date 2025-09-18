@@ -250,7 +250,7 @@ blob_connection_string = f"{con_str}"
 blob = BlobClient.from_connection_string(
     blob_connection_string,
     container_name="privateprop",
-    blob_name=csv_filename
+    blob_name=gz_filename
 )
 with open(gz_filename, "rb") as data:
     blob.upload_blob(data, overwrite=True)
