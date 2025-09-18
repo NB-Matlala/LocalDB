@@ -793,7 +793,7 @@ blob = BlobClient.from_connection_string(
     container_name="privateprop",
     blob_name = gz_filename     #csv_filename
 )
-with open(csv_filename, "rb") as data:
+with open(gz_filename, "rb") as data:
     blob.upload_blob(data, overwrite=True)
 
 print("CSV file uploaded to Azure Blob Storage.")
