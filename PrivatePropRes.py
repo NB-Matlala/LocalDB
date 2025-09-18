@@ -606,6 +606,7 @@ import threading
 from queue import Queue
 from datetime import datetime
 import csv
+import gzip
 from azure.storage.blob import BlobClient
 import os
 
@@ -733,10 +734,7 @@ provinces = {
     'north-west': '9',
     'mpumalanga': '10'
 }
-# provinces = {
-#     'northern-cape': '5',
-#     'free-state': '6',
-# }
+
 
 for prov,p_num in provinces.items():  #range(2, 11)
     x_prov = f"{base_url}/for-sale/{prov}/{p_num}"
@@ -750,15 +748,6 @@ for prov,p_num in provinces.items():  #range(2, 11)
 
         for p in range(1, pgs + 1):
             url = f"{x}&page={p}"
-            # home_page = session.get(f"{x}&page={p}")
-            # soup = BeautifulSoup(home_page.content, 'html.parser')
-            # prop_contain = soup.find_all('a', class_='listing-result')
-            # prop_contain.extend(soup.find_all('a', class_='featured-listing'))
-            # for x_page in prop_contain:
-            
-                # prop = getDealers(x_page)
-                # if prop is not None:
-                #     Deal_url = prop
             queue.put({"url": url, "extract_function": extractor, "prop_type": pt})
 
 # Start threads
@@ -778,21 +767,31 @@ for i in range(num_threads):
 for t in threads:
     t.join()
 
-# Write results to CSV
-csv_filename = 'PrivatePropRes.csv'
-with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
+# # Write results to CSV
+# csv_filename = 'PrivatePropRes.csv'
+# with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
+#     fieldnames = results[0].keys() if results else []
+#     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+#     writer.writeheader()
+#     for result in results:
+#         writer.writerow(result)
+
+# Write to gzip format
+gz_filename = "PrivatePropRes.csv.gz"
+with gzip.open(gz_filename, "wt", newline="", encoding="utf-8") as gzfile:
     fieldnames = results[0].keys() if results else []
-    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer = csv.DictWriter(gzfile, fieldnames=fieldnames)
     writer.writeheader()
     for result in results:
         writer.writerow(result)
 
+###
 ### Upload to Azure Blob Storage
 blob_connection_string = f"{con_str}"
 blob = BlobClient.from_connection_string(
     blob_connection_string,
     container_name="privateprop",
-    blob_name=csv_filename
+    blob_name = gz_filename     #csv_filename
 )
 with open(csv_filename, "rb") as data:
     blob.upload_blob(data, overwrite=True)
