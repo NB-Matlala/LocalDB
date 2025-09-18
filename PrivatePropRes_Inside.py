@@ -9,6 +9,7 @@ import threading
 from queue import Queue
 from datetime import datetime
 import csv
+import gzip
 from azure.storage.blob import BlobClient
 import os
 
@@ -200,11 +201,20 @@ for i in range(num_threads):
 for t in threads:
     t.join()
 
-# Write results to CSV
-csv_filename = 'PrivatePropRes(Inside).csv'
-with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
+# # Write results to CSV
+# csv_filename = 'PrivatePropRes(Inside).csv'
+# with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
+#     fieldnames = results[0].keys() if results else []
+#     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+#     writer.writeheader()
+#     for result in results:
+#         writer.writerow(result)
+        
+# Write results to gzip
+gz_filename = 'PrivatePropRes(Inside).csv.gz'
+with gzip.open(csv_filename, 'w', newline='', encoding='utf-8') as gzfile:
     fieldnames = results[0].keys() if results else []
-    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer = csv.DictWriter(gzfile, fieldnames=fieldnames)
     writer.writeheader()
     for result in results:
         writer.writerow(result)
@@ -214,9 +224,9 @@ blob_connection_string = f"{con_str}"
 blob = BlobClient.from_connection_string(
     blob_connection_string,
     container_name="privateprop",
-    blob_name=csv_filename
+    blob_name=gz_filename
 )
-with open(csv_filename, "rb") as data:
+with open(gz_filename, "rb") as data:
     blob.upload_blob(data, overwrite=True)
 
 print("CSV file uploaded to Azure Blob Storage.")
