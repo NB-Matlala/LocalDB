@@ -193,14 +193,24 @@ for i in range(num_threads):
 for t in threads:
     t.join()
 
-# Write results to CSV
-csv_filename = 'PrivatePropRes(Inside)2.csv'
-with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
+# # Write results to CSV
+# csv_filename = 'PrivatePropRes(Inside)2.csv'
+# with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
+#     fieldnames = results[0].keys() if results else []
+#     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+#     writer.writeheader()
+#     for result in results:
+#         writer.writerow(result)
+
+# Write results to Gzip
+gz_filename = 'PrivatePropRes(Inside)2.csv.gz'
+with open(gz_filename, 'wt', newline='', encoding='utf-8') as gzfile:
     fieldnames = results[0].keys() if results else []
-    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer = csv.DictWriter(gzfile, fieldnames=fieldnames)
     writer.writeheader()
     for result in results:
         writer.writerow(result)
+
 
 # Upload to Azure Blob Storage
 blob_connection_string = f"{con_str}"
