@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 import json
 import random
 import csv
+import gzip
 import math
 from datetime import datetime
 from azure.storage.blob import BlobClient
@@ -614,14 +615,18 @@ def plot_extractor(soup):
 async def main():
     fieldnames = ['Listing ID', 'Title', 'Property Type', 'Price', 'Street', 'Region', 'Locality','Bedrooms', 'Bathrooms', 'Floor Size', 'Garages', 'URL',
                   'Agent Name', 'Agent Url', 'Time_stamp']
-    filename = "PrivatePropCom.csv"
+    # filename = "PrivatePropCom.csv"
+    gz_filename = "PrivatePropCom.csv.gz"
 
     async with aiohttp.ClientSession() as session:
-        with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        # with open(filename, 'a', newline='', encoding='utf-8-sig') as csvfile:
+        #     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        #     writer.writeheader()
+        #     start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with gzip.open(gz_filename, "wt", newline="", encoding="utf-8") as gzfile:
+            writer = csv.DictWriter(gzfile, fieldnames=fieldnames)
             writer.writeheader()
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
             async def process_province(prov,p_num):
                 new_links = []
                 link = f"{base_url}/commercial-sales/{prov}/{p_num}"
@@ -806,11 +811,11 @@ async def main():
         # Upload the CSV file to Azure Blob Storage
         connection_string = f"{con_str}"
         container_name = "privateprop"
-        blob_name = "PrivatePropCom.csv"
+        blob_name = "PrivatePropCom.csv.gz"
 
         blob_client = BlobClient.from_connection_string(connection_string, container_name, blob_name)
 
-        with open(filename, "rb") as data:
+        with open(gz_filename, "rb") as data:
             blob_client.upload_blob(data, overwrite=True)
             print(f"Outside File uploaded to Azure Blob Storage: {blob_name}")
 
@@ -936,13 +941,14 @@ async def main2():
                    'Erf Size', 'Property Type', 'Floor Size', 'Rates and taxes', 'Levies',
                   'Bedrooms', 'Bathrooms', 'Lounges', 'Dining', 'Garages', 'Covered Parking', 'Storeys',
                   'Agent Name', 'Agent Url', 'Time_stamp']
-    filename2 = "PrivatePropRes(Inside)5.csv"
+    # filename2 = "PrivatePropRes(Inside)5.csv"
+    gz_filename2 = "PrivatePropRes(Inside)5.csv.gz"
     ids = []
     semaphore2 = asyncio.Semaphore(500)
 
     async with aiohttp.ClientSession() as session2:
-        with open(filename2, 'a', newline='', encoding='utf-8-sig') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames2)
+        with gzip.open(gz_filename2, 'a', newline='', encoding='utf-8-sig') as gzfile:
+            writer = csv.DictWriter(gzfile, fieldnames=fieldnames2)
             writer.writeheader()
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -1040,11 +1046,11 @@ async def main2():
 
     connection_string = f"{con_str}"
     container_name = "privateprop"
-    blob_name = "PrivatePropRes(Inside)5.csv"
+    blob_name = "PrivatePropRes(Inside)5.csv.gz"
 
     blob_client = BlobClient.from_connection_string(connection_string, container_name, blob_name)
 
-    with open(filename2, "rb") as data:
+    with open(gz_filename2, "rb") as data:
         blob_client.upload_blob(data, overwrite=True)
         print(f"Inside File uploaded to Azure Blob Storage: {blob_name}")
 
