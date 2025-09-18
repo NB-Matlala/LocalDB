@@ -947,7 +947,7 @@ async def main2():
     semaphore2 = asyncio.Semaphore(500)
 
     async with aiohttp.ClientSession() as session2:
-        with gzip.open(gz_filename2, 'a', newline='', encoding='utf-8-sig') as gzfile:
+        with gzip.open(gz_filename2, 'wt', newline='', encoding='utf-8-sig') as gzfile:
             writer = csv.DictWriter(gzfile, fieldnames=fieldnames2)
             writer.writeheader()
             start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
