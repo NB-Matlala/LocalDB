@@ -5,10 +5,8 @@ on:
   #   branches:
   #     - main
   workflow_dispatch:
-  workflow_run:
-    workflows: ["Web PrivPropRes(Inside)4_2"]
-    types:
-      - completed
+  schedule:
+    - cron: '30 16 * * 6'
 
 jobs:
   followupjob4:
