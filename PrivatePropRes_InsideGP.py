@@ -207,7 +207,7 @@ for t in threads:
 
 # Write results to Gzip
 gz_filename = 'PrivatePropRes(Inside)3.csv.gz'
-with open(gz_filename, 'wt', newline='', encoding='utf-8') as gzfile:
+with gzip.open(gz_filename, 'wt', newline='', encoding='utf-8') as gzfile:
     fieldnames = results[0].keys() if results else []
     writer = csv.DictWriter(gzfile, fieldnames=fieldnames)
     writer.writeheader()
