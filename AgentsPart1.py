@@ -128,7 +128,7 @@ for t in threads:
 
 # Write results to CSV
 gz_filename = 'PrivatePropDealer_part1.csv.gz'
-with open(csv_filename, 'wt', newline='', encoding='utf-8') as csvfile:
+with gzip.open(gz_filename, 'wt', newline='', encoding='utf-8') as csvfile:
     fieldnames = results[0].keys() if results else []
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
@@ -146,4 +146,5 @@ with open(gz_filename, "rb") as data:
     blob.upload_blob(data, overwrite=True)
 
 print("CSV file uploaded to Azure Blob Storage.")
+
 
