@@ -6,7 +6,7 @@ on:
   #     - main
   workflow_dispatch:
   workflow_run:
-    workflows: ["Web PrivPropRes(Inside)4_2"]
+    workflows: ["Web Agents1"]
     types:
       - completed
 
