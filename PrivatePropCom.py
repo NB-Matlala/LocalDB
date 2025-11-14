@@ -1057,7 +1057,7 @@
 # # Running the main coroutine
 # asyncio.run(main2())
 
-
+######################################################################################################################################################
 from bs4 import BeautifulSoup
 from requests_html import HTMLSession
 import re
@@ -1075,8 +1075,6 @@ import os
 base_url = os.getenv("BASE_URL")
 con_str = os.getenv("CON_STR")
 
-
-
 session = HTMLSession()
 
 # Thread worker function
@@ -1087,13 +1085,12 @@ def worker(queue, results):
             break
         url = item.get("url")
         extract_function = item.get("extract_function")
-        # pt = item.get("prop_type")
         try:
             response = session.get(url)
             soup = BeautifulSoup(response.content, 'html.parser')
             result = extract_function(soup, url)
             if result:
-                results.extend(result)
+                results.append(result)
         except Exception as e:
             print(f"Request failed for {url}: {e}")
         finally:
@@ -1111,84 +1108,99 @@ def getPages(soupPage, url):
         return 0
 
 def extractor(soup, url):
-    prop_contain = soup.find_all('a', class_='listing-result')
-    prop_contain.extend(soup.find_all('a', class_='featured-listing'))
-    property_type = None
+    # Initialize variables with default values
+    prop_ID = erfSize = floor_size = rates = levy = None
+    beds = baths = lounge = dining = garage = parking = storeys = None
+    agent_name = agent_url = price = street = locality = province = None
+
+    try:
+        prop_div = soup.find('div', class_='property-details')
+
+        price = soup.find('div', class_='listing-price-display__price').text.strip()
+        price = price.replace('\xa0', ' ')
+
+        street = soup.find('div', class_ ='listing-details__address').text.strip()
+
+        lists = prop_div.find('ul', class_='property-details__list')
+        features = lists.find_all('li')
+        for feature in features:
+            icon = feature.find('svg').find('use').get('xlink:href')
+            value = feature.find('span', class_='property-details__value').text.strip()
+            if '#listing-alt' in icon:
+                prop_ID = value
+            elif '#property-type' in icon:
+                prop_type = value
+            elif '#erf-size' in icon:
+                erfSize = value.replace('\xa0', ' ')
+            elif '#property-size' in icon:
+                floor_size = value.replace('\xa0', ' ')
+            elif '#rates' in icon:
+                rates = value.replace('\xa0', ' ')
+            elif '#levies' in icon:
+                levy = value.replace('\xa0', ' ')
+    except Exception as e:
+        print(f"Error extracting property details for {url}: {e}")
+
+    try:
+        prop_feat_div = soup.find('div', id='property-features-list')
+        lists_feat = prop_feat_div.find('ul', class_='property-features__list')
+        feats = lists_feat.find_all('li')
+        for feat in feats:
+            feat_icon = feat.find('svg').find('use').get('xlink:href')
+            value = feat.find('span', class_='property-features__value').text.strip()
+            if '#bedrooms' in feat_icon:
+                beds = value
+            elif '#bathroom' in feat_icon:
+                baths = value
+            elif '#lounges' in feat_icon:
+                lounge = value
+            elif '#dining' in feat_icon:
+                dining = value
+            elif '#garages' in feat_icon:
+                garage = value
+            elif '#covered-parkiung' in feat_icon:
+                parking = value
+            elif '#storeys' in feat_icon:
+                storeys = value
+    except Exception as e:
+        print(f"Error extracting property features list for {url}: {e}")
+
+
+    try:
+        details_div = soup.find('div', class_='listing-details')
+        script_data = details_div.find('script', type='application/ld+json').string
+        json_data = json.loads(script_data)
+        locality = json_data['address']['addressLocality']
+        province = json_data['address']['addressRegion']
+    except Exception as e:
+        print(f"Error extracting property json regions {url}: {e}")
+    current_datetime = datetime.now().strftime('%Y-%m-%d')
     
-    # if pt == '10':
-    #     property_type = 'Townhouse / Cluster'
-    # elif pt == '5':
-    #     property_type = 'House'
-    # elif pt == '2':
-    #     property_type = 'Apartment / Flat'
-    # elif pt == '7':
-    #     property_type = 'Vacant Land / Plot'
-    # elif pt == '1':
-    #     property_type = 'Farm / Smallholding'
+    return {
+        "Listing ID": prop_ID, "Price": price, "Street": street, "Locality": locality, "Province": province,
+        "Erf Size": erfSize, "Property Type": prop_type, "Floor Size": floor_size,
+        "Rates and taxes": rates, "Levies": levy, "Bedrooms": beds, "Bathrooms": baths, "Lounges": lounge,
+        "Dining": dining, "Garages": garage, "Covered Parking": parking, "Storeys": storeys, "Agent Name": agent_name,
+        "Agent Url": agent_url, "Time_stamp":current_datetime
+    }
+def getIds(soup):
+    try:
+        # script_data = soup.find('script', type='application/ld+json').string
+        # json_data = json.loads(script_data)
+        # url = json_data['url']
+        url = soup['href']
 
-    data = []   
-    for x_page in prop_contain:
-
-        try:
-            link = x_page['href']
-
-            prop_ID_match = re.search(r'/([^/]+)$', link)
-            if prop_ID_match:
-                prop_id = prop_ID_match.group(1)
-
-                # url = f"{url}{prop_id}"
-        except Exception as e:
-            print(f"Error extracting ID from {e}")    
-        
-        
-        try:
-            agent_name = None
-            agent_url = None
-            agent_div = x_page.find('div', class_='listing-result__advertiser txt-small-regular')
-            title = x_page.get('title')
-
-            if agent_div:
-                try:
-                    agent_detail = agent_div.find('img', class_='listing-result__logo')
-                    agent_name = agent_detail.get('alt')
-                    agent_url = agent_detail.get('src')
-                    agent_id_match = re.search(r'offices/(\d+)', agent_url)
-                    if agent_id_match:
-                        agent_id = agent_id_match.group(1)
-                        agent_url = f"{base_url}/estate-agency/estate-agent/{agent_id}"
-                except:
-                    agent_name = "Private Seller"
-                    agent_url = None
-        except Exception as e:
-            agent_name = None
-            agent_url = None
-            print(f"Something went wrong with getting details: {e}")
-        current_datetime = datetime.now().strftime('%Y-%m-%d')
-        
-        
-        data.append({
-            "Listing ID": prop_id,
-            "Title": title,
-            "Property Type": property_type,
-            "URL": f"{base_url}{link}",
-            "Agent Name": agent_name,
-            "Agent Url": agent_url,
-            "Time_stamp": current_datetime
-        })
-
-    return data
-
+        prop_ID_match = re.search(r'/([^/]+)$', url)
+        if prop_ID_match:
+            return prop_ID_match.group(1)
+    except Exception as e:
+        print(f"Error extracting ID from {soup}: {e}")
+    return None
 
 # Initialize thread queue and results list
 queue = Queue()
 results = []
-
-
-prop_types = ['10','5','2','7','1']
 provinces = {
-    'kwazulu-natal': '2',
-    'gauteng': '3',
-    'western-cape': '4',
     'northern-cape': '5',
     'free-state': '6',
     'eastern-cape': '7',
@@ -1197,23 +1209,31 @@ provinces = {
     'mpumalanga': '10'
 }
 
+for prov,p_num in provinces.items():  
 
-for prov,p_num in provinces.items():  #range(2, 11)
-    x_prov = f"{base_url}/commercial-sales/{prov}/{p_num}"
-    
-    
-# for pt in prop_types:
-    x = f"{x_prov}"
-    land = session.get(x)
-    land_html = BeautifulSoup(land.content, 'html.parser')
-    pgs = getPages(land_html, x)
+    x = f"{base_url}/commercial-sales/{prov}/{p_num}"
+    try:
+        land = session.get(x)
+        land_html = BeautifulSoup(land.content, 'html.parser')
+        pgs = getPages(land_html, x)
 
-    for p in range(1, pgs + 1):
-        url = f"{x}&page={p}"
-        queue.put({"url": url, "extract_function": extractor})
+        for p in range(1, pgs + 1):
+            home_page = session.get(f"{x}?page={p}")
+            # home_page = session.get(f"{x}?page={p}")
+            soup = BeautifulSoup(home_page.content, 'html.parser')
+            prop_contain = soup.find_all('a', class_='featured-listing')
+            prop_contain.extend(soup.find_all('a', class_='listing-result'))
+            for x_page in prop_contain:
+                prop_id = getIds(x_page)
+                if prop_id:
+                    list_url = f"{base_url}/for-sale/something/something/something/{prop_id}" 
+                    queue.put({"url": list_url, "extract_function": extractor})
+
+    except Exception as e:
+        print(f"Failed to process URL {x}: {e}")
 
 # Start threads
-num_threads = 10  
+num_threads = 10  # Adjust the number of threads based on your system's capabilities
 threads = []
 for i in range(num_threads):
     t = threading.Thread(target=worker, args=(queue, results))
@@ -1230,30 +1250,29 @@ for t in threads:
     t.join()
 
 # # Write results to CSV
-# csv_filename = 'PrivatePropRes.csv'
+# csv_filename = 'PrivatePropRes(Inside).csv'
 # with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
 #     fieldnames = results[0].keys() if results else []
 #     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 #     writer.writeheader()
 #     for result in results:
 #         writer.writerow(result)
-
-# Write to gzip format
-gz_filename = "test.csv.gz"
-with gzip.open(gz_filename, "wt", newline="", encoding="utf-8") as gzfile:
+        
+# Write results to gzip
+gz_filename = 'test.csv.gz'
+with gzip.open(gz_filename, 'wt', newline='', encoding='utf-8') as gzfile:
     fieldnames = results[0].keys() if results else []
     writer = csv.DictWriter(gzfile, fieldnames=fieldnames)
     writer.writeheader()
     for result in results:
         writer.writerow(result)
 
-###
-### Upload to Azure Blob Storage
+# Upload to Azure Blob Storage
 blob_connection_string = f"{con_str}"
 blob = BlobClient.from_connection_string(
     blob_connection_string,
     container_name="privateprop",
-    blob_name = gz_filename     #csv_filename
+    blob_name=gz_filename
 )
 with open(gz_filename, "rb") as data:
     blob.upload_blob(data, overwrite=True)
