@@ -1058,7 +1058,6 @@
 # asyncio.run(main2())
 
 
-####################################################################################
 from bs4 import BeautifulSoup
 from requests_html import HTMLSession
 import re
@@ -1088,11 +1087,11 @@ def worker(queue, results):
             break
         url = item.get("url")
         extract_function = item.get("extract_function")
-        pt = item.get("prop_type")
+        # pt = item.get("prop_type")
         try:
             response = session.get(url)
             soup = BeautifulSoup(response.content, 'html.parser')
-            result = extract_function(soup, url, pt)
+            result = extract_function(soup, url)
             if result:
                 results.extend(result)
         except Exception as e:
@@ -1111,21 +1110,21 @@ def getPages(soupPage, url):
         print(f"Failed to parse number of pages for URL: {url} - {e}")
         return 0
 
-def extractor(soup, url, pt):
+def extractor(soup, url):
     prop_contain = soup.find_all('a', class_='listing-result')
     prop_contain.extend(soup.find_all('a', class_='featured-listing'))
     property_type = None
     
-    if pt == '10':
-        property_type = 'Townhouse / Cluster'
-    elif pt == '5':
-        property_type = 'House'
-    elif pt == '2':
-        property_type = 'Apartment / Flat'
-    elif pt == '7':
-        property_type = 'Vacant Land / Plot'
-    elif pt == '1':
-        property_type = 'Farm / Smallholding'
+    # if pt == '10':
+    #     property_type = 'Townhouse / Cluster'
+    # elif pt == '5':
+    #     property_type = 'House'
+    # elif pt == '2':
+    #     property_type = 'Apartment / Flat'
+    # elif pt == '7':
+    #     property_type = 'Vacant Land / Plot'
+    # elif pt == '1':
+    #     property_type = 'Farm / Smallholding'
 
     data = []   
     for x_page in prop_contain:
@@ -1211,7 +1210,7 @@ for prov,p_num in provinces.items():  #range(2, 11)
 
     for p in range(1, pgs + 1):
         url = f"{x}&page={p}"
-        queue.put({"url": url, "extract_function": extractor, "prop_type": pt})
+        queue.put({"url": url, "extract_function": extractor})
 
 # Start threads
 num_threads = 10  
