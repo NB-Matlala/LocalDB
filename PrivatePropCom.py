@@ -79,7 +79,7 @@ def commercial_extractor(soup):
         size = None
         features = soup.find_all('span', class_='listing-result__feature')
         for feature in features:
-            icon = feature.find('svg').find('use').get('xlink:href')
+            icon = feature.find('svg').find('use').get('href')
             if '#erf-size' in icon:
                 size = feature.text.strip()
                 size = size.replace('\xa0', ' ')
@@ -174,7 +174,7 @@ def indust_extractor(soup):
         size = None
         features = soup.find_all('span', class_='listing-result__feature')
         for feature in features:
-            icon = feature.find('svg').find('use').get('xlink:href')
+            icon = feature.find('svg').find('use').get('href')
             if '#erf-size' in icon:
                 size = feature.text.strip()
                 size = size.replace('\xa0', ' ')
@@ -269,7 +269,7 @@ def retail_extractor(soup):
         size = None
         features = soup.find_all('span', class_='listing-result__feature')
         for feature in features:
-            icon = feature.find('svg').find('use').get('xlink:href')
+            icon = feature.find('svg').find('use').get('href')
             if '#erf-size' in icon:
                 size = feature.text.strip()
                 size = size.replace('\xa0', ' ')
@@ -364,7 +364,7 @@ def office_extractor(soup):
         size = None
         features = soup.find_all('span', class_='listing-result__feature')
         for feature in features:
-            icon = feature.find('svg').find('use').get('xlink:href')
+            icon = feature.find('svg').find('use').get('href')
             if '#erf-size' in icon:
                 size = feature.text.strip()
                 size = size.replace('\xa0', ' ')
@@ -459,7 +459,7 @@ def hospit_extractor(soup):
         size = None
         features = soup.find_all('span', class_='listing-result__feature')
         for feature in features:
-            icon = feature.find('svg').find('use').get('xlink:href')
+            icon = feature.find('svg').find('use').get('href')
             if '#erf-size' in icon:
                 size = feature.text.strip()
                 size = size.replace('\xa0', ' ')
@@ -554,7 +554,7 @@ def plot_extractor(soup):
         size = None
         features = soup.find_all('span', class_='listing-result__feature')
         for feature in features:
-            icon = feature.find('svg').find('use').get('xlink:href')
+            icon = feature.find('svg').find('use').get('href')
             if '#erf-size' in icon:
                 size = feature.text.strip()
                 size = size.replace('\xa0', ' ')
@@ -1125,7 +1125,7 @@ def main2():
             lists = prop_div.find('ul', class_='property-details__list')
             features = lists.find_all('li')
             for feature in features:
-                icon = feature.find('svg').find('use').get('xlink:href')
+                icon = feature.find('svg').find('use').get('href')
                 value = feature.find('span', class_='property-details__value').text.strip()
                 if '#listing-alt' in icon:
                     prop_ID = value
@@ -1147,7 +1147,7 @@ def main2():
             lists_feat = prop_feat_div.find('ul', class_='property-features__list')
             feats = lists_feat.find_all('li')
             for feat in feats:
-                feat_icon = feat.find('svg').find('use').get('xlink:href')
+                feat_icon = feat.find('svg').find('use').get('href')
                 value = feat.find('span', class_='property-features__value').text.strip()
                 if '#bedrooms' in feat_icon:
                     beds = value
