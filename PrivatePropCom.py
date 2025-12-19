@@ -1144,11 +1144,22 @@ def base_extractor(soup, property_type):
         street = data['address'].get('streetAddress')
         locality = data['address'].get('addressLocality')
         region = data['address'].get('addressRegion')
-        url = data.get('url')
-        prop_ID = url.split('/')[-1]
+        # url = data.get('url')
+        # prop_ID = url.split('/')[-1]
     except:
         pass
+        
+    try:
+        link = soup['href']
 
+        prop_ID_match = re.search(r'/([^/]+)$', link)
+        if prop_ID_match:
+            prop_id = prop_ID_match.group(1)
+
+            # url = f"{url}{prop_id}"
+    except Exception as e:
+        print(f"Error extracting ID from {e}") 
+            
     beds = baths = garages = None
     try:
         for p in data.get('additionalProperty', []):
