@@ -1150,13 +1150,12 @@ def base_extractor(soup, property_type):
         pass
         
     try:
-        link = soup['href']
+        link = soup.get('href')
+       
+        match = re.search(r'/([^/]+)$', link)
+        if match:
+            prop_ID = match.group(1)
 
-        prop_ID_match = re.search(r'/([^/]+)$', link)
-        if prop_ID_match:
-            prop_id = prop_ID_match.group(1)
-
-            # url = f"{url}{prop_id}"
     except Exception as e:
         print(f"Error extracting ID from {e}") 
             
