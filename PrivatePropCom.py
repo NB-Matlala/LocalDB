@@ -1,4 +1,5 @@
 # ####### out & in comm extract ############
+'''This section of the code extracts commerical listings from the outside'''
 def main_run1():
     from bs4 import BeautifulSoup
     from requests_html import HTMLSession
@@ -21,6 +22,42 @@ def main_run1():
     session = HTMLSession()
     
     ###################################### Helpers ######################################
+    def get_web_total():
+        res_com = session.get(f'{base_url}/commercial-sales/south-africa/1')
+        soup_com = BeautifulSoup(res_com.content, 'html.parser')
+
+        tot_div_com = soup_com.find('div', class_ = 'sort-and-listing-count').text
+
+        total_list_com = tot_div_com.split('of ')[1].split(' results')[0]
+        total_list_com = re.sub(r"[\s\xa0]", "", total_list_com)
+
+        res = session.get(f'{base_url}/for-sale/south-africa/1')
+        soup = BeautifulSoup(res.content, 'html.parser')
+
+        tot_div = soup.find('div', class_ = 'sort-and-listing-count').text
+
+        total_list = tot_div.split('of ')[1].split(' results')[0]
+        total_list = re.sub(r"[\s\xa0]", "", total_list)
+
+
+        web_total = int(total_list) + int(total_list_com) 
+
+        # _____________ INSERT Total To Blob _____________
+        timestamp  = datetime.now().strftime('%Y-%m-%d')
+        filename   = f"PrivPropTotal_{timestamp}.csv"
+        rows       = [{"total_listings": web_total, "Time_stamp": timestamp}]
+
+        with open(filename, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=["total_listings", "Time_stamp"])
+            writer.writeheader()
+            writer.writerows(rows)
+
+        blob_client = BlobClient.from_connection_string(con_str, 'webtotals', filename)
+        with open(filename, "rb") as f:
+            blob_client.upload_blob(f, overwrite=True)
+
+        print(f"Total Listings ({web_total}) uploaded to Blob.")  
+        # ___________________ END ________________________
     
     def getPages(soupPage, url):
         try:
@@ -163,6 +200,7 @@ def main_run1():
     ###################################### Main ######################################
     
     def main():
+        get_web_total()  # insert wtotal to blob.
         fieldnames = [
             'Listing ID', 'Title', 'Property Type', 'Price', 'Street', 'Region',
             'Locality', 'Bedrooms', 'Bathrooms', 'Floor Size', 'Garages',
@@ -197,7 +235,7 @@ def main_run1():
                 4: hospit_extractor,
                 7: plot_extractor
             }
-    
+            
             for prov, pnum in provinces.items():
                 for pt, extractor in pt_map.items():
                     base = f"{base_url}/commercial-sales/{prov}/{pnum}?pt={pt}"
@@ -232,6 +270,7 @@ def main_run1():
     main()
 main_run1()
 # #################################################################################################################################################################
+'''This section of the code extracts commerical listing details'''
 def main2():
     from bs4 import BeautifulSoup
     from requests_html import HTMLSession
