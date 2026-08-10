@@ -11,10 +11,11 @@ def main_run1():
     import math
     import threading
     from queue import Queue
-    from datetime import datetime
     from azure.storage.blob import BlobClient
     import os
     import time
+    from datetime import datetime, timezone, timedelta
+
     
     base_url = os.getenv("BASE_URL")
     con_str = os.getenv("CON_STR")
@@ -43,7 +44,12 @@ def main_run1():
         web_total = int(total_list) + int(total_list_com) 
 
         # _____________ INSERT Total To Blob _____________
-        timestamp  = datetime.now().strftime('%Y-%m-%d')
+
+        utc_plus_2 = timezone(timedelta(hours=2))
+        
+        timestamp = datetime.now(utc_plus_2).strftime('%Y-%m-%d')
+        
+        # timestamp  = datetime.now().strftime('%Y-%m-%d')
         filename   = f"PrivPropTotal_{timestamp}.csv"
         rows       = [{"total_listings": web_total, "Time_stamp": timestamp}]
 
@@ -159,7 +165,9 @@ def main_run1():
                     garages = p['value']
         except:
             pass
-    
+        
+        utc_plus_2 = timezone(timedelta(hours=2))
+        timestamp = datetime.now(utc_plus_2).strftime('%Y-%m-%d')
         return {
             "Listing ID": prop_ID,
             "Title": title,
@@ -175,7 +183,7 @@ def main_run1():
             "URL": url,
             "Agent Name": agent_name,
             "Agent Url": agent_url,
-            "Time_stamp": datetime.now().strftime('%Y-%m-%d')
+            "Time_stamp": timestamp #datetime.now().strftime('%Y-%m-%d')
         }
     
     ###################################### Thread Worker ######################################
