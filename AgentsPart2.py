@@ -38,10 +38,8 @@ def worker(queue, results):
 
 def getPages(soupPage, url):
     try:
-        num_pg = soupPage.find('div', class_='sort-and-listing-count')
-        # ('div', class_='listing-results-layout__mobile-item-count txt-small-regular')
-        num_pgV = num_pg.text.split('of ')[-1]
-        num_pgV = num_pgV.replace('\xa0', '').replace(' results', '')
+        num_pg = soupPage.find('div', class_='sort-and-listing-count').text
+        num_pgV = int(re.sub(r'\D', '', num_pg.split('of ')[-1]))
         pages = math.ceil(int(num_pgV) / 20)
         return pages
     except (ValueError, AttributeError) as e:
@@ -100,7 +98,7 @@ for prov,p_num in provinces.items():
     x = f"{base_url}/for-sale/{prov}/{p_num}"
     land = session.get(x)
     land_html = BeautifulSoup(land.content, 'html.parser')
-    pgs = getPages(land_html, x)
+    pgs = (land_html, x)
     for p in range(1, pgs + 1):
         home_page = session.get(f"{x}?page={p}")
         soup = BeautifulSoup(home_page.content, 'html.parser')
