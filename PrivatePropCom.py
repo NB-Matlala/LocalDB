@@ -29,16 +29,15 @@ def main_run1():
 
         tot_div_com = soup_com.find('div', class_ = 'sort-and-listing-count').text
 
-        total_list_com = tot_div_com.split('of ')[1].split(' results')[0]
-        total_list_com = re.sub(r"[\s\xa0]", "", total_list_com)
+        total_list_com = int(re.sub(r'\D', '', tot_div_com.split('of ')[-1]))
+
 
         res = session.get(f'{base_url}/for-sale/south-africa/1')
         soup = BeautifulSoup(res.content, 'html.parser')
 
         tot_div = soup.find('div', class_ = 'sort-and-listing-count').text
 
-        total_list = tot_div.split('of ')[1].split(' results')[0]
-        total_list = re.sub(r"[\s\xa0]", "", total_list)
+        total_list = int(re.sub(r'\D', '', tot_div.split('of ')[-1]))
 
 
         web_total = int(total_list) + int(total_list_com) 
@@ -67,9 +66,8 @@ def main_run1():
     
     def getPages(soupPage, url):
         try:
-            num_pg = soupPage.find('div', class_='sort-and-listing-count')
-            num_pgV = num_pg.text.split('of ')[-1]
-            num_pgV = num_pgV.replace('\xa0', '').replace(' results', '')
+            num_pg = soupPage.find('div', class_='sort-and-listing-count').text
+            num_pgV = int(re.sub(r'\D', '', num_pg.split('of ')[-1]))
             return math.ceil(int(num_pgV) / 20)
         except Exception as e:
             print(f"Pagination error {url}: {e}")
@@ -320,10 +318,8 @@ def main2():
     
     def getPages(soupPage, url):
         try:
-            num_pg = soupPage.find('div', class_='sort-and-listing-count')
-            # ('div', class_='listing-results-layout__mobile-item-count txt-small-regular')
-            num_pgV = num_pg.text.split('of ')[-1]
-            num_pgV = num_pgV.replace('\xa0', '').replace(' results', '')
+            num_pg = soupPage.find('div', class_='sort-and-listing-count').text
+            num_pgV = int(re.sub(r'\D', '', num_pg.split('of ')[-1]))
             pages = math.ceil(int(num_pgV) / 20)
             return pages
         except (ValueError, AttributeError) as e:
